@@ -8,9 +8,7 @@ import pandas as pd
 import requests
 
 
-FPL_BOOTSTRAP_URL = (
-    "https://fantasy.premierleague.com/api/bootstrap-static/"
-)
+FPL_BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 
 RAW_DATA_PATH = Path("data/raw/bootstrap_static.json")
 PROCESSED_DATA_PATH = Path("data/processed/players.csv")
@@ -34,7 +32,7 @@ def fetch_bootstrap_data() -> dict[str, Any]:
 
     if "elements" not in data:
         raise ValueError(
-            "FPL response does not contain expected player data."
+            "FPL response does not contain the expected 'elements' player data."
         )
 
     return data
@@ -49,9 +47,7 @@ def save_raw_data(data: dict[str, Any]) -> None:
         json.dump(data, file, indent=2)
 
 
-def build_player_dataframe(
-    data: dict[str, Any],
-) -> pd.DataFrame:
+def build_player_dataframe(data: dict[str, Any]) -> pd.DataFrame:
     """Convert raw FPL player data into a clean table."""
 
     players = pd.DataFrame(data["elements"])
@@ -59,17 +55,10 @@ def build_player_dataframe(
     positions = pd.DataFrame(data["element_types"])
 
     team_lookup = teams.set_index("id")["name"].to_dict()
-
-    position_lookup = (
-        positions
-        .set_index("id")["singular_name_short"]
-        .to_dict()
-    )
+    position_lookup = positions.set_index("id")["singular_name_short"].to_dict()
 
     players["team_name"] = players["team"].map(team_lookup)
-    players["position"] = players["element_type"].map(
-        position_lookup
-    )
+    players["position"] = players["element_type"].map(position_lookup)
 
     players["player_name"] = (
         players["first_name"].str.strip()
@@ -100,9 +89,7 @@ def build_player_dataframe(
     ]
 
     missing_columns = [
-        column
-        for column in selected_columns
-        if column not in players.columns
+        column for column in selected_columns if column not in players.columns
     ]
 
     if missing_columns:
@@ -114,15 +101,10 @@ def build_player_dataframe(
     return players[selected_columns].copy()
 
 
-def save_processed_data(
-    players: pd.DataFrame,
-) -> None:
+def save_processed_data(players: pd.DataFrame) -> None:
     """Save cleaned player data as CSV."""
 
-    PROCESSED_DATA_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    PROCESSED_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     players.to_csv(
         PROCESSED_DATA_PATH,
@@ -134,10 +116,7 @@ def save_processed_data(
 def run_recruitment_pipeline() -> pd.DataFrame:
     """Run the complete recruitment data pipeline."""
 
-    print(
-        "Recruitment Department: "
-        "contacting FPL data source..."
-    )
+    print("Recruitment Department: contacting FPL data source...")
 
     data = fetch_bootstrap_data()
     save_raw_data(data)
@@ -145,15 +124,8 @@ def run_recruitment_pipeline() -> pd.DataFrame:
     players = build_player_dataframe(data)
     save_processed_data(players)
 
-    print(
-        f"Recruitment Department: "
-        f"{len(players)} players registered."
-    )
-
+    print(f"Recruitment Department: {len(players)} players registered.")
     print(f"Raw data saved to: {RAW_DATA_PATH}")
-    print(
-        f"Processed data saved to: "
-        f"{PROCESSED_DATA_PATH}"
-    )
+    print(f"Processed data saved to: {PROCESSED_DATA_PATH}")
 
     return players

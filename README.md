@@ -57,3 +57,8 @@ The first release will:
 
 > The recruitment department is open.  
 > Project Airaola can now retrieve, validate and process the complete FPL player pool. Every registered player is assigned a club, position, price and performance profile, ready for squad evaluation.
+
+### v0.1.2: Squad Registration
+
+> The registration office is operational.  
+> Project Airaola can now assemble and validate a complete 15-player squad while enforcing positional quotas, budget restrictions, unique-player selection and club limits.
