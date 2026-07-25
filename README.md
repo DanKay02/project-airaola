@@ -62,3 +62,8 @@ The first release will:
 
 > The registration office is operational.  
 > Project Airaola can now assemble and validate a complete 15-player squad while enforcing positional quotas, budget restrictions, unique-player selection and club limits.
+
+### v0.1.3: First Team Selection
+
+> The manager has named his first squad.  
+> Project Airaola can now evaluate the full player pool and select the highest-scoring legal 15-player squad under all FPL budget, positional and club constraints.

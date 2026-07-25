@@ -7,8 +7,8 @@ from airaola.data.fetch_fpl_data import (
     run_recruitment_pipeline,
 )
 from airaola.models.squad_rules import validate_squad
-from airaola.optimisation.sample_squad import (
-    build_sample_squad,
+from airaola.optimisation.squad_optimiser import (
+    optimise_initial_squad,
 )
 
 
@@ -16,7 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 def load_club_identity() -> dict:
-    """Load Project Airaola's identity and manager philosophy."""
+    """Load Project Airaola's identity and philosophy."""
 
     config_path = (
         PROJECT_ROOT
@@ -44,7 +44,7 @@ def load_club_identity() -> dict:
 
 
 def print_identity(identity: dict) -> None:
-    """Print the project's identity and current version."""
+    """Print the project identity."""
 
     project = identity["project"]
     manager = identity["manager"]
@@ -58,7 +58,8 @@ def print_identity(identity: dict) -> None:
     print(f"Objective: {manager['objective']}")
     print(
         "Planning horizon: "
-        f"{manager['planning_horizon_gameweeks']} Gameweeks"
+        f"{manager['planning_horizon_gameweeks']} "
+        "Gameweeks"
     )
     print()
 
@@ -66,7 +67,7 @@ def print_identity(identity: dict) -> None:
 def print_recruitment_summary(
     players: pd.DataFrame,
 ) -> None:
-    """Print a summary of the downloaded player pool."""
+    """Print recruitment data summary."""
 
     print()
     print("=" * 60)
@@ -88,24 +89,17 @@ def print_recruitment_summary(
     )
 
 
-def print_squad_registration(
+def print_optimised_squad(
     squad: pd.DataFrame,
 ) -> None:
-    """Validate and print the squad registration result."""
+    """Validate and display Airaola's selected squad."""
 
     result = validate_squad(squad)
 
     print()
     print("=" * 60)
-    print("Squad Registration")
+    print("First Team Selection")
     print("=" * 60)
-
-    display_columns = [
-        "player_name",
-        "team_name",
-        "position",
-        "price",
-    ]
 
     position_order = {
         "GKP": 1,
@@ -122,27 +116,65 @@ def print_squad_registration(
     )
 
     ordered_squad = ordered_squad.sort_values(
-        by=["position_order", "price"],
-        ascending=[True, False],
+        by=[
+            "position_order",
+            "selection_score",
+        ],
+        ascending=[
+            True,
+            False,
+        ],
     )
 
+    display_columns = [
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+        "total_points",
+        "selection_score",
+    ]
+
     print(
-        ordered_squad[
-            display_columns
-        ].to_string(index=False)
+    ordered_squad[
+        display_columns
+    ].to_string(
+        index=False,
+        col_space=14,
     )
+)
 
     print()
+
+    total_points = int(
+        squad["total_points"].sum()
+    )
+
+    budget_remaining = (
+        100.0 - result.total_cost
+    )
+
     print(
-        f"Players registered: {result.player_count}"
+        f"Players selected: {result.player_count}"
     )
     print(
         f"Squad cost: £{result.total_cost:.1f}m"
     )
+    print(
+        f"Budget remaining: "
+        f"£{budget_remaining:.1f}m"
+    )
+    print(
+        f"Combined current points: "
+        f"{total_points}"
+    )
 
     if result.is_valid:
         print("Registration status: APPROVED")
-        print("All FPL squad rules satisfied.")
+        print(
+            "Optimisation status: "
+            "LEGAL SQUAD FOUND"
+        )
         return
 
     print("Registration status: REJECTED")
@@ -152,7 +184,7 @@ def print_squad_registration(
 
 
 def main() -> None:
-    """Run Project Airaola's recruitment and registration workflow."""
+    """Run recruitment and initial squad optimisation."""
 
     try:
         identity = load_club_identity()
@@ -161,8 +193,15 @@ def main() -> None:
         players = run_recruitment_pipeline()
         print_recruitment_summary(players)
 
-        sample_squad = build_sample_squad(players)
-        print_squad_registration(sample_squad)
+        print()
+        print(
+            "First Team Department: "
+            "evaluating legal squad combinations..."
+        )
+
+        squad = optimise_initial_squad(players)
+
+        print_optimised_squad(squad)
 
     except FileNotFoundError as error:
         print(f"Configuration error: {error}")
@@ -170,6 +209,10 @@ def main() -> None:
 
     except ValueError as error:
         print(f"Data validation error: {error}")
+        raise SystemExit(1) from error
+
+    except RuntimeError as error:
+        print(f"Optimisation error: {error}")
         raise SystemExit(1) from error
 
     except Exception as error:
