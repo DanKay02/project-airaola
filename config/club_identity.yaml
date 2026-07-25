@@ -1,0 +1,21 @@
+project:
+  name: "Project Airaola"
+  tagline: "Data. Decisions. Domination."
+  version: "0.1.0"
+
+manager:
+  name: "Airaola"
+  objective: "Maximise total season points"
+  planning_horizon_gameweeks: 5
+
+philosophy:
+  transfer_style: "conservative"
+  captaincy_style: "moderate_risk"
+  prioritise_secure_minutes: true
+  avoid_unnecessary_hits: true
+  preserve_chips: true
+
+principle:
+  statement: >
+    Every decision made by Project Airaola must be explainable
+    through measurable evidence.
