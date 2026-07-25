@@ -52,3 +52,8 @@ The first release will:
 
 > The training ground is open.  
 > Project Airaola now has a defined identity, development environment, version history and public home. Recruitment operations can begin.
+
+### v0.1.1: Recruitment Department
+
+> The recruitment department is open.  
+> Project Airaola can now retrieve, validate and process the complete FPL player pool. Every registered player is assigned a club, position, price and performance profile, ready for squad evaluation.
