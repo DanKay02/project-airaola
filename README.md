@@ -67,3 +67,8 @@ The first release will:
 
 > The manager has named his first squad.  
 > Project Airaola can now evaluate the full player pool and select the highest-scoring legal 15-player squad under all FPL budget, positional and club constraints.
+
+### v0.1.4: The Projection Engine
+
+> The analysis department has opened its doors.  
+> Project Airaola now produces forward-looking player projections using recent form, points per game, points per 90, expected minutes and availability. Squad selection is now driven by projected performance rather than points already scored.

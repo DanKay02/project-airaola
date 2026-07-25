@@ -20,10 +20,13 @@ def prepare_optimisation_pool(
     players: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Prepare players for optimisation.
+    Prepare player data for squad optimisation.
 
-    Prices are converted from millions into integer tenths because
-    CP-SAT works with integer coefficients.
+    Prices are converted into integer tenths because OR-Tools CP-SAT
+    requires integer coefficients.
+
+    Projected points are multiplied by 100 so decimal projections can
+    still be optimised accurately.
     """
 
     required_columns = {
@@ -32,7 +35,7 @@ def prepare_optimisation_pool(
         "team_name",
         "position",
         "price",
-        "total_points",
+        "projected_points",
         "status",
     }
 
@@ -48,6 +51,7 @@ def prepare_optimisation_pool(
 
     pool = players.copy()
 
+    # Keep players marked as available or doubtful.
     pool = pool[
         pool["status"].isin(["a", "d"])
     ].copy()
@@ -55,22 +59,12 @@ def prepare_optimisation_pool(
     pool = pool.dropna(
         subset=[
             "id",
+            "player_name",
             "team_name",
             "position",
             "price",
-            "total_points",
+            "projected_points",
         ]
-    )
-
-    pool["price_tenths"] = (
-        pool["price"] * 10
-    ).round().astype(int)
-
-    pool["optimisation_score"] = (
-        pool["total_points"]
-        .fillna(0)
-        .round()
-        .astype(int)
     )
 
     pool = pool[
@@ -79,20 +73,82 @@ def prepare_optimisation_pool(
         )
     ].copy()
 
+    pool["price_tenths"] = (
+        pd.to_numeric(
+            pool["price"],
+            errors="coerce",
+        )
+        .mul(10)
+        .round()
+        .astype(int)
+    )
+
+    pool["optimisation_score"] = (
+        pd.to_numeric(
+            pool["projected_points"],
+            errors="coerce",
+        )
+        .fillna(0.0)
+        .mul(100)
+        .round()
+        .astype(int)
+    )
+
+    pool = pool[
+        pool["price_tenths"] > 0
+    ].copy()
+
+    if pool.empty:
+        raise ValueError(
+            "No eligible players remain after preparing "
+            "the optimisation pool."
+        )
+
     return pool.reset_index(drop=True)
+
+
+def validate_position_pool(
+    pool: pd.DataFrame,
+) -> None:
+    """
+    Confirm enough eligible players exist in every position.
+
+    This produces a clearer error before the optimiser is started.
+    """
+
+    for position, required_count in (
+        POSITION_REQUIREMENTS.items()
+    ):
+        available_count = int(
+            (pool["position"] == position).sum()
+        )
+
+        if available_count < required_count:
+            raise ValueError(
+                f"Not enough eligible {position} players. "
+                f"Required: {required_count}. "
+                f"Available: {available_count}."
+            )
 
 
 def optimise_initial_squad(
     players: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Select the legal squad with the highest optimisation score.
+    Select the legal 15-player squad with the highest projected score.
 
-    This first version uses current total FPL points as its score.
-    Future versions will use projected points instead.
+    Constraints:
+    - exactly 15 players
+    - exactly 2 GKP
+    - exactly 5 DEF
+    - exactly 5 MID
+    - exactly 3 FWD
+    - maximum 3 players per club
+    - maximum £100.0m total cost
     """
 
     pool = prepare_optimisation_pool(players)
+    validate_position_pool(pool)
 
     model = cp_model.CpModel()
 
@@ -103,12 +159,12 @@ def optimise_initial_squad(
         for index, player in pool.iterrows()
     }
 
-    # Exactly 15 players
+    # Exactly 15 players.
     model.add(
         sum(selected.values()) == SQUAD_SIZE
     )
 
-    # Positional requirements
+    # Exact positional composition.
     for position, required_count in (
         POSITION_REQUIREMENTS.items()
     ):
@@ -124,7 +180,7 @@ def optimise_initial_squad(
             == required_count
         )
 
-    # Maximum three players per club
+    # Maximum three players from any one club.
     for club_name in sorted(
         pool["team_name"].unique()
     ):
@@ -140,17 +196,22 @@ def optimise_initial_squad(
             <= MAX_PLAYERS_PER_CLUB
         )
 
-    # Maximum £100.0m budget
+    # Total cost cannot exceed £100.0m.
     model.add(
         sum(
             selected[index]
-            * int(pool.loc[index, "price_tenths"])
+            * int(
+                pool.loc[
+                    index,
+                    "price_tenths",
+                ]
+            )
             for index in pool.index
         )
         <= BUDGET_LIMIT_TENTHS
     )
 
-    # Maximise total player score
+    # Maximise projected points.
     model.maximize(
         sum(
             selected[index]
@@ -178,7 +239,8 @@ def optimise_initial_squad(
 
     if status not in valid_statuses:
         raise RuntimeError(
-            "Airaola could not find a legal squad."
+            "Project Airaola could not find "
+            "a legal projected squad."
         )
 
     selected_indexes = [
@@ -191,8 +253,10 @@ def optimise_initial_squad(
         selected_indexes
     ].copy()
 
-    squad["selection_score"] = squad[
-        "optimisation_score"
-    ]
+    squad["selection_score"] = (
+        squad["optimisation_score"] / 100
+    )
+
+    squad["selected_by_optimiser"] = True
 
     return squad.reset_index(drop=True)

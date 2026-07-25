@@ -6,6 +6,9 @@ import yaml
 from airaola.data.fetch_fpl_data import (
     run_recruitment_pipeline,
 )
+from airaola.models.projections import (
+    build_player_projections,
+)
 from airaola.models.squad_rules import validate_squad
 from airaola.optimisation.squad_optimiser import (
     optimise_initial_squad,
@@ -58,8 +61,7 @@ def print_identity(identity: dict) -> None:
     print(f"Objective: {manager['objective']}")
     print(
         "Planning horizon: "
-        f"{manager['planning_horizon_gameweeks']} "
-        "Gameweeks"
+        f"{manager['planning_horizon_gameweeks']} Gameweeks"
     )
     print()
 
@@ -89,6 +91,51 @@ def print_recruitment_summary(
     )
 
 
+def print_projection_summary(
+    players: pd.DataFrame,
+    planning_horizon: int,
+) -> None:
+    """Display the highest baseline projections."""
+
+    print()
+    print("=" * 60)
+    print("Projection Department")
+    print("=" * 60)
+
+    print(
+        f"Projection horizon: "
+        f"{planning_horizon} Gameweeks"
+    )
+
+    columns = [
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+        "expected_minutes",
+        "projected_points",
+        "projection_value",
+    ]
+
+    leaders = (
+        players[columns]
+        .sort_values(
+            "projected_points",
+            ascending=False,
+        )
+        .head(10)
+    )
+
+    print()
+    print("Highest projected players:")
+    print(
+        leaders.to_string(
+            index=False,
+            col_space=14,
+        )
+    )
+
+
 def print_optimised_squad(
     squad: pd.DataFrame,
 ) -> None:
@@ -98,7 +145,7 @@ def print_optimised_squad(
 
     print()
     print("=" * 60)
-    print("First Team Selection")
+    print("Projected First Team Selection")
     print("=" * 60)
 
     position_order = {
@@ -118,7 +165,7 @@ def print_optimised_squad(
     ordered_squad = ordered_squad.sort_values(
         by=[
             "position_order",
-            "selection_score",
+            "projected_points",
         ],
         ascending=[
             True,
@@ -131,29 +178,29 @@ def print_optimised_squad(
         "team_name",
         "position",
         "price",
-        "total_points",
-        "selection_score",
+        "expected_minutes",
+        "projected_points",
+        "projection_value",
     ]
 
     print(
-    ordered_squad[
-        display_columns
-    ].to_string(
-        index=False,
-        col_space=14,
+        ordered_squad[
+            display_columns
+        ].to_string(
+            index=False,
+            col_space=14,
+        )
     )
-)
 
-    print()
-
-    total_points = int(
-        squad["total_points"].sum()
+    total_projected_points = float(
+        squad["projected_points"].sum()
     )
 
     budget_remaining = (
         100.0 - result.total_cost
     )
 
+    print()
     print(
         f"Players selected: {result.player_count}"
     )
@@ -165,15 +212,15 @@ def print_optimised_squad(
         f"£{budget_remaining:.1f}m"
     )
     print(
-        f"Combined current points: "
-        f"{total_points}"
+        "Combined projected points: "
+        f"{total_projected_points:.2f}"
     )
 
     if result.is_valid:
         print("Registration status: APPROVED")
         print(
             "Optimisation status: "
-            "LEGAL SQUAD FOUND"
+            "PROJECTED SQUAD FOUND"
         )
         return
 
@@ -184,22 +231,46 @@ def print_optimised_squad(
 
 
 def main() -> None:
-    """Run recruitment and initial squad optimisation."""
+    """Run recruitment, projections and squad optimisation."""
 
     try:
         identity = load_club_identity()
         print_identity(identity)
+
+        planning_horizon = int(
+            identity["manager"][
+                "planning_horizon_gameweeks"
+            ]
+        )
 
         players = run_recruitment_pipeline()
         print_recruitment_summary(players)
 
         print()
         print(
-            "First Team Department: "
-            "evaluating legal squad combinations..."
+            "Projection Department: "
+            "calculating future player scores..."
         )
 
-        squad = optimise_initial_squad(players)
+        projected_players = build_player_projections(
+            players,
+            planning_horizon=planning_horizon,
+        )
+
+        print_projection_summary(
+            projected_players,
+            planning_horizon,
+        )
+
+        print()
+        print(
+            "First Team Department: "
+            "optimising projected squad..."
+        )
+
+        squad = optimise_initial_squad(
+            projected_players
+        )
 
         print_optimised_squad(squad)
 
