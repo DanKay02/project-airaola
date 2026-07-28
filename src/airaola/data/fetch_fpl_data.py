@@ -23,7 +23,7 @@ def fetch_bootstrap_data() -> dict[str, Any]:
         FPL_BOOTSTRAP_URL,
         timeout=30,
         headers={
-            "User-Agent": "Project-Airaola/0.1.6",
+            "User-Agent": "Project-Airaola/0.1.7",
             "Accept": "application/json",
         },
     )
@@ -61,63 +61,82 @@ def save_raw_data(data: dict[str, Any]) -> None:
 
 
 def build_player_dataframe(
-    data: dict[str, Any],
+    data: dict,
 ) -> pd.DataFrame:
-    """Convert raw FPL player data into a clean table."""
+    """Convert raw FPL player data into a clean player table."""
 
-    players = pd.DataFrame(data["elements"])
-    teams = pd.DataFrame(data["teams"])
-    positions = pd.DataFrame(data["element_types"])
-
-    team_lookup = (
-        teams
-        .set_index("id")["name"]
-        .to_dict()
+    players = pd.DataFrame(
+        data["elements"]
     )
 
-    position_lookup = (
-        positions
-        .set_index("id")["singular_name_short"]
-        .to_dict()
+    teams = pd.DataFrame(
+        data["teams"]
     )
 
-    players["team_name"] = players["team"].map(
-        team_lookup
+    positions = pd.DataFrame(
+        data["element_types"]
     )
 
-    players["position"] = players[
-        "element_type"
-    ].map(position_lookup)
+    team_lookup = teams.set_index(
+        "id"
+    )["name"].to_dict()
+
+    position_lookup = positions.set_index(
+        "id"
+    )["singular_name_short"].to_dict()
 
     players["player_name"] = (
-        players["first_name"].str.strip()
+        players["first_name"].fillna("")
         + " "
-        + players["second_name"].str.strip()
+        + players["second_name"].fillna("")
+    ).str.strip()
+
+    players["team_id"] = players["team"]
+
+    players["team_name"] = (
+        players["team"]
+        .map(team_lookup)
+    )
+
+    players["position"] = (
+        players["element_type"]
+        .map(position_lookup)
     )
 
     players["price"] = (
-        players["now_cost"] / 10
+        pd.to_numeric(
+            players["now_cost"],
+            errors="coerce",
+        )
+        / 10
     )
 
     selected_columns = [
         "id",
         "player_name",
         "web_name",
+        "first_name",
+        "second_name",
+        "team_id",
         "team_name",
         "position",
         "price",
-        "total_points",
+        "status",
+        "chance_of_playing_next_round",
+        "news",
         "minutes",
         "starts",
+        "total_points",
+        "points_per_game",
+        "form",
+        "selected_by_percent",
         "goals_scored",
         "assists",
         "clean_sheets",
+        "goals_conceded",
+        "saves",
         "bonus",
-        "form",
-        "points_per_game",
-        "selected_by_percent",
-        "status",
-        "chance_of_playing_next_round",
+        "bps",
     ]
 
     missing_columns = [
@@ -126,15 +145,38 @@ def build_player_dataframe(
         if column not in players.columns
     ]
 
-    if missing_columns:
-        raise ValueError(
-            "FPL player data is missing expected columns: "
-            + ", ".join(missing_columns)
-        )
+    for column in missing_columns:
+        players[column] = None
 
-    return players[
+    players = players[
         selected_columns
     ].copy()
+
+    numeric_columns = [
+        "price",
+        "minutes",
+        "starts",
+        "total_points",
+        "points_per_game",
+        "form",
+        "selected_by_percent",
+        "goals_scored",
+        "assists",
+        "clean_sheets",
+        "goals_conceded",
+        "saves",
+        "bonus",
+        "bps",
+        "chance_of_playing_next_round",
+    ]
+
+    for column in numeric_columns:
+        players[column] = pd.to_numeric(
+            players[column],
+            errors="coerce",
+        )
+
+    return players
 
 
 def save_processed_data(

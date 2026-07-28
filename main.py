@@ -201,16 +201,18 @@ def print_projection_summary(
     )
 
     columns = [
-        "player_name",
-        "team_name",
-        "position",
-        "price",
-        "fixture_count",
-        "average_fixture_difficulty",
-        "expected_minutes",
-        "projected_points",
-        "projection_value",
-    ]
+    "player_name",
+    "team_name",
+    "position",
+    "price",
+    "start_security",
+    "minutes_security",
+    "fixture_count",
+    "average_fixture_difficulty",
+    "expected_minutes",
+    "projected_points",
+    "projection_value",
+]
 
     leaders = (
         players[
@@ -272,16 +274,18 @@ def print_optimised_squad(
     )
 
     display_columns = [
-        "player_name",
-        "team_name",
-        "position",
-        "price",
-        "fixture_count",
-        "average_fixture_difficulty",
-        "expected_minutes",
-        "projected_points",
-        "projection_value",
-    ]
+    "player_name",
+    "team_name",
+    "position",
+    "price",
+    "start_security",
+    "minutes_security",
+    "fixture_count",
+    "average_fixture_difficulty",
+    "expected_minutes",
+    "projected_points",
+    "projection_value",
+]
 
     print(
         ordered_squad[

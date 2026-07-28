@@ -8,6 +8,10 @@ SQUAD_SIZE = 15
 BUDGET_LIMIT_TENTHS = 1000
 MAX_PLAYERS_PER_CLUB = 3
 
+MIN_MINUTES_SECURITY = 0.35
+MIN_EXPECTED_MINUTES = 135.0
+MIN_GOALKEEPER_SECURITY = 0.65
+
 POSITION_REQUIREMENTS = {
     "GKP": 2,
     "DEF": 5,
@@ -37,6 +41,8 @@ def prepare_optimisation_pool(
         "price",
         "projected_points",
         "status",
+        "minutes_security",
+        "expected_minutes",
     }
 
     missing_columns = required_columns.difference(
@@ -51,9 +57,40 @@ def prepare_optimisation_pool(
 
     pool = players.copy()
 
-    # Keep players marked as available or doubtful.
+    pool["minutes_security"] = pd.to_numeric(
+        pool["minutes_security"],
+        errors="coerce",
+    )
+
+    pool["expected_minutes"] = pd.to_numeric(
+        pool["expected_minutes"],
+        errors="coerce",
+    )
+
+    # Keep only available or doubtful players with a realistic
+    # chance of playing meaningful minutes.
     pool = pool[
         pool["status"].isin(["a", "d"])
+        & (
+            pool["minutes_security"]
+            >= MIN_MINUTES_SECURITY
+        )
+        & (
+            pool["expected_minutes"]
+            >= MIN_EXPECTED_MINUTES
+        )
+    ].copy()
+
+    # Goalkeepers require much stronger selection security because
+    # backup keepers usually receive no substitute minutes.
+    pool = pool[
+        (
+            pool["position"] != "GKP"
+        )
+        | (
+            pool["minutes_security"]
+            >= MIN_GOALKEEPER_SECURITY
+        )
     ].copy()
 
     pool = pool.dropna(
@@ -64,6 +101,8 @@ def prepare_optimisation_pool(
             "position",
             "price",
             "projected_points",
+            "minutes_security",
+            "expected_minutes",
         ]
     )
 
@@ -159,12 +198,10 @@ def optimise_initial_squad(
         for index, player in pool.iterrows()
     }
 
-    # Exactly 15 players.
     model.add(
         sum(selected.values()) == SQUAD_SIZE
     )
 
-    # Exact positional composition.
     for position, required_count in (
         POSITION_REQUIREMENTS.items()
     ):
@@ -180,7 +217,6 @@ def optimise_initial_squad(
             == required_count
         )
 
-    # Maximum three players from any one club.
     for club_name in sorted(
         pool["team_name"].unique()
     ):
@@ -196,7 +232,6 @@ def optimise_initial_squad(
             <= MAX_PLAYERS_PER_CLUB
         )
 
-    # Total cost cannot exceed £100.0m.
     model.add(
         sum(
             selected[index]
@@ -211,7 +246,6 @@ def optimise_initial_squad(
         <= BUDGET_LIMIT_TENTHS
     )
 
-    # Maximise projected points.
     model.maximize(
         sum(
             selected[index]

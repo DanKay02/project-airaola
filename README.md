@@ -82,3 +82,7 @@ The first release will:
 
 > The tactical analysis unit is operational.  
 > Project Airaola now adjusts every player projection according to fixture difficulty, venue, and fixture count. Blank Gameweeks contribute no fixture projection, while Double Gameweeks are evaluated as multiple independent matches.
+
+### v0.1.7: Position-Aware Minutes Security
+
+> Project Airaola now models start security, positional involvement, sample confidence, and position-specific scoring routes. Goalkeepers face stricter eligibility rules, preventing backup players from being selected based on misleading small samples.

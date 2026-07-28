@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 
-DEFAULT_GAMEWEEK_MINUTES = 90
 DEFAULT_HORIZON = 5
+MINUTES_PER_MATCH = 90
 
 FIXTURE_DIFFICULTY_MULTIPLIERS = {
     1: 1.20,
@@ -18,13 +18,27 @@ FIXTURE_DIFFICULTY_MULTIPLIERS = {
 HOME_MULTIPLIER = 1.05
 AWAY_MULTIPLIER = 0.95
 
+GOAL_POINTS = {
+    "GKP": 6,
+    "DEF": 6,
+    "MID": 5,
+    "FWD": 4,
+}
+
+CLEAN_SHEET_POINTS = {
+    "GKP": 4,
+    "DEF": 4,
+    "MID": 1,
+    "FWD": 0,
+}
+
 
 def numeric_series(
     dataframe: pd.DataFrame,
     column: str,
     default: float = 0.0,
 ) -> pd.Series:
-    """Convert a DataFrame column into a safe numeric series."""
+    """Return a safe numeric representation of a column."""
 
     if column not in dataframe.columns:
         return pd.Series(
@@ -42,28 +56,38 @@ def numeric_series(
 def calculate_availability_probability(
     players: pd.DataFrame,
 ) -> pd.Series:
-    """Estimate each player's probability of being available."""
+    """Estimate the probability that each player is available."""
 
     status_probabilities = {
         "a": 1.00,
-        "d": 0.75,
+        "d": 0.70,
         "i": 0.05,
         "s": 0.00,
         "u": 0.00,
         "n": 0.00,
     }
 
-    status_probability = (
-        players["status"]
-        .map(status_probabilities)
-        .fillna(0.50)
-        .astype(float)
-    )
+    if "status" not in players.columns:
+        status_probability = pd.Series(
+            1.0,
+            index=players.index,
+            dtype=float,
+        )
+    else:
+        status_probability = (
+            players["status"]
+            .map(status_probabilities)
+            .fillna(0.50)
+            .astype(float)
+        )
 
-    if "chance_of_playing_next_round" not in players.columns:
+    if (
+        "chance_of_playing_next_round"
+        not in players.columns
+    ):
         return status_probability
 
-    chance_probability = (
+    official_chance = (
         pd.to_numeric(
             players["chance_of_playing_next_round"],
             errors="coerce",
@@ -71,7 +95,7 @@ def calculate_availability_probability(
         / 100
     )
 
-    return chance_probability.fillna(
+    return official_chance.fillna(
         status_probability
     ).clip(
         lower=0.0,
@@ -79,35 +103,156 @@ def calculate_availability_probability(
     )
 
 
-def calculate_minutes_reliability(
+def calculate_start_security(
     players: pd.DataFrame,
 ) -> pd.Series:
-    """Estimate how reliably each player receives meaningful minutes."""
-
-    minutes = numeric_series(
-        players,
-        "minutes",
-    )
+    """Estimate start security relative to positional teammates."""
 
     starts = numeric_series(
         players,
         "starts",
     )
 
-    estimated_appearances = np.maximum(
-        starts,
-        np.ceil(minutes / 90),
+    comparison = players[
+        [
+            "team_name",
+            "position",
+        ]
+    ].copy()
+
+    comparison["starts"] = starts
+
+    maximum_starts = (
+        comparison
+        .groupby(
+            [
+                "team_name",
+                "position",
+            ]
+        )["starts"]
+        .transform("max")
+        .replace(0, np.nan)
     )
 
-    average_minutes = np.where(
-        estimated_appearances > 0,
-        minutes / estimated_appearances,
-        0.0,
+    security = starts / maximum_starts
+
+    return security.fillna(0.0).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+
+def calculate_minutes_involvement(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """Estimate involvement relative to positional teammates."""
+
+    minutes = numeric_series(
+        players,
+        "minutes",
+    )
+
+    comparison = players[
+        [
+            "team_name",
+            "position",
+        ]
+    ].copy()
+
+    comparison["minutes"] = minutes
+
+    maximum_minutes = (
+        comparison
+        .groupby(
+            [
+                "team_name",
+                "position",
+            ]
+        )["minutes"]
+        .transform("max")
+        .replace(0, np.nan)
+    )
+
+    involvement = minutes / maximum_minutes
+
+    return involvement.fillna(0.0).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+
+def calculate_sample_confidence(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """Reduce confidence in projections based on tiny samples."""
+
+    starts = numeric_series(
+        players,
+        "starts",
+    )
+
+    confidence = np.sqrt(
+        starts.clip(lower=0.0) / 15.0
     )
 
     return pd.Series(
-        average_minutes / 90,
+        confidence,
         index=players.index,
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+
+def calculate_minutes_security(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """Estimate future minutes security."""
+
+    start_security = calculate_start_security(
+        players
+    )
+
+    involvement = calculate_minutes_involvement(
+        players
+    )
+
+    sample_confidence = calculate_sample_confidence(
+        players
+    )
+
+    outfield_security = (
+        start_security * 0.65
+        + involvement * 0.35
+    )
+
+    goalkeeper_security = (
+        start_security * 0.90
+        + involvement * 0.10
+    )
+
+    positions = players["position"].astype(str)
+
+    base_security = np.where(
+        positions == "GKP",
+        goalkeeper_security,
+        outfield_security,
+    )
+
+    base_security = pd.Series(
+        base_security,
+        index=players.index,
+        dtype=float,
+    )
+
+    confidence_multiplier = (
+        0.40
+        + sample_confidence * 0.60
+    )
+
+    return (
+        base_security
+        * confidence_multiplier
     ).clip(
         lower=0.0,
         upper=1.0,
@@ -117,7 +262,7 @@ def calculate_minutes_reliability(
 def calculate_points_per_90(
     players: pd.DataFrame,
 ) -> pd.Series:
-    """Calculate historic FPL points per 90 minutes."""
+    """Calculate historical FPL points per 90 minutes."""
 
     points = numeric_series(
         players,
@@ -129,18 +274,113 @@ def calculate_points_per_90(
         "minutes",
     )
 
-    points_per_90 = np.where(
+    values = np.where(
         minutes >= 90,
         points / minutes * 90,
         0.0,
     )
 
     return pd.Series(
-        points_per_90,
+        values,
         index=players.index,
+        dtype=float,
     ).clip(
         lower=0.0,
         upper=15.0,
+    )
+
+
+def calculate_position_score(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """Build a position-aware historical scoring metric."""
+
+    minutes = numeric_series(
+        players,
+        "minutes",
+    )
+
+    goals = numeric_series(
+        players,
+        "goals_scored",
+    )
+
+    assists = numeric_series(
+        players,
+        "assists",
+    )
+
+    clean_sheets = numeric_series(
+        players,
+        "clean_sheets",
+    )
+
+    saves = numeric_series(
+        players,
+        "saves",
+    )
+
+    bonus = numeric_series(
+        players,
+        "bonus",
+    )
+
+    positions = players["position"].astype(str)
+
+    goal_value = (
+        positions
+        .map(GOAL_POINTS)
+        .fillna(4)
+        .astype(float)
+    )
+
+    clean_sheet_value = (
+        positions
+        .map(CLEAN_SHEET_POINTS)
+        .fillna(0)
+        .astype(float)
+    )
+
+    attacking_points = (
+        goals * goal_value
+        + assists * 3
+    )
+
+    clean_sheet_points = (
+        clean_sheets
+        * clean_sheet_value
+    )
+
+    save_points = pd.Series(
+        np.where(
+            positions == "GKP",
+            saves / 3,
+            0.0,
+        ),
+        index=players.index,
+        dtype=float,
+    )
+
+    role_points = (
+        attacking_points
+        + clean_sheet_points
+        + save_points
+        + bonus
+    )
+
+    values = np.where(
+        minutes >= 90,
+        role_points / minutes * 90,
+        0.0,
+    )
+
+    return pd.Series(
+        values,
+        index=players.index,
+        dtype=float,
+    ).clip(
+        lower=0.0,
+        upper=12.0,
     )
 
 
@@ -153,11 +393,13 @@ def calculate_fixture_multiplier(
     if pd.isna(difficulty):
         difficulty_multiplier = 1.0
     else:
-        rounded_difficulty = int(round(float(difficulty)))
+        difficulty_value = int(
+            round(float(difficulty))
+        )
 
         difficulty_multiplier = (
             FIXTURE_DIFFICULTY_MULTIPLIERS.get(
-                rounded_difficulty,
+                difficulty_value,
                 1.0,
             )
         )
@@ -169,24 +411,20 @@ def calculate_fixture_multiplier(
     else:
         venue_multiplier = 1.0
 
-    return difficulty_multiplier * venue_multiplier
+    return (
+        difficulty_multiplier
+        * venue_multiplier
+    )
 
 
-def calculate_team_fixture_projections(
+def build_team_fixture_summary(
     team_fixtures: pd.DataFrame,
-    base_points_per_gameweek: dict[str, float],
 ) -> pd.DataFrame:
-    """
-    Calculate projected points for every team fixture.
-
-    Each fixture is calculated independently, allowing blanks and
-    doubles to emerge naturally from the schedule.
-    """
+    """Summarise fixture quantity and difficulty by club."""
 
     required_columns = {
         "team_name",
         "event",
-        "opponent_name",
         "venue",
         "difficulty",
     }
@@ -201,10 +439,10 @@ def calculate_team_fixture_projections(
             + ", ".join(sorted(missing_columns))
         )
 
-    fixture_projection = team_fixtures.copy()
+    fixtures = team_fixtures.copy()
 
-    fixture_projection["fixture_multiplier"] = (
-        fixture_projection.apply(
+    fixtures["fixture_multiplier"] = (
+        fixtures.apply(
             lambda row: calculate_fixture_multiplier(
                 difficulty=row["difficulty"],
                 venue=row["venue"],
@@ -213,117 +451,8 @@ def calculate_team_fixture_projections(
         )
     )
 
-    fixture_projection["team_base_points"] = (
-        fixture_projection["team_name"]
-        .map(base_points_per_gameweek)
-        .fillna(0.0)
-    )
-
-    fixture_projection["team_fixture_projection"] = (
-        fixture_projection["team_base_points"]
-        * fixture_projection["fixture_multiplier"]
-    )
-
-    return fixture_projection
-
-
-def build_player_projections(
-    players: pd.DataFrame,
-    team_fixtures: pd.DataFrame,
-    planning_horizon: int = DEFAULT_HORIZON,
-) -> pd.DataFrame:
-    """
-    Produce fixture-adjusted projections for every player.
-
-    Blank Gameweeks contribute zero fixture points.
-    Double Gameweeks contribute one projection per fixture.
-    """
-
-    if planning_horizon <= 0:
-        raise ValueError(
-            "Planning horizon must be greater than zero."
-        )
-
-    projected = players.copy()
-
-    form = numeric_series(
-        projected,
-        "form",
-    )
-
-    points_per_game = numeric_series(
-        projected,
-        "points_per_game",
-    )
-
-    points_per_90 = calculate_points_per_90(
-        projected
-    )
-
-    availability = (
-        calculate_availability_probability(
-            projected
-        )
-    )
-
-    minutes_reliability = (
-        calculate_minutes_reliability(
-            projected
-        )
-    )
-
-    expected_minutes_per_fixture = (
-        DEFAULT_GAMEWEEK_MINUTES
-        * minutes_reliability
-        * availability
-    )
-
-    raw_points_per_fixture = (
-        form * 0.45
-        + points_per_game * 0.30
-        + points_per_90 * 0.25
-    )
-
-    baseline_points_per_fixture = (
-        raw_points_per_fixture
-        * minutes_reliability
-        * availability
-    )
-
-    projected["availability_probability"] = (
-        availability.round(3)
-    )
-
-    projected["minutes_reliability"] = (
-        minutes_reliability.round(3)
-    )
-
-    projected["points_per_90"] = (
-        points_per_90.round(2)
-    )
-
-    projected["baseline_points_per_fixture"] = (
-        baseline_points_per_fixture.round(3)
-    )
-
-    team_base_points = (
-        projected
-        .groupby("team_name")[
-            "baseline_points_per_fixture"
-        ]
-        .mean()
-        .to_dict()
-    )
-
-    fixture_projection = (
-        calculate_team_fixture_projections(
-            team_fixtures=team_fixtures,
-            base_points_per_gameweek=team_base_points,
-        )
-    )
-
-    team_fixture_summary = (
-        fixture_projection
+    return (
+        fixtures
         .groupby("team_name")
         .agg(
             fixture_count=(
@@ -342,8 +471,106 @@ def build_player_projections(
         .reset_index()
     )
 
+
+def build_player_projections(
+    players: pd.DataFrame,
+    team_fixtures: pd.DataFrame,
+    planning_horizon: int = DEFAULT_HORIZON,
+) -> pd.DataFrame:
+    """Build position-aware, fixture-adjusted projections."""
+
+    if planning_horizon <= 0:
+        raise ValueError(
+            "Planning horizon must be greater than zero."
+        )
+
+    projected = players.copy()
+
+    required_columns = {
+        "team_name",
+        "position",
+        "price",
+    }
+
+    missing_columns = required_columns.difference(
+        projected.columns
+    )
+
+    if missing_columns:
+        raise ValueError(
+            "Player data is missing projection columns: "
+            + ", ".join(sorted(missing_columns))
+        )
+
+    form = numeric_series(
+        projected,
+        "form",
+    )
+
+    points_per_game = numeric_series(
+        projected,
+        "points_per_game",
+    )
+
+    points_per_90 = calculate_points_per_90(
+        projected
+    )
+
+    position_score = calculate_position_score(
+        projected
+    )
+
+    availability = calculate_availability_probability(
+        projected
+    )
+
+    start_security = calculate_start_security(
+        projected
+    )
+
+    minutes_security = calculate_minutes_security(
+        projected
+    )
+
+    raw_points_per_fixture = (
+        form * 0.35
+        + points_per_game * 0.25
+        + points_per_90 * 0.20
+        + position_score * 0.20
+    )
+
+    projected["availability_probability"] = (
+        availability.round(3)
+    )
+
+    projected["start_security"] = (
+        start_security.round(3)
+    )
+
+    projected["minutes_security"] = (
+        minutes_security.round(3)
+    )
+
+    projected["points_per_90"] = (
+        points_per_90.round(2)
+    )
+
+    projected["position_score"] = (
+        position_score.round(2)
+    )
+
+    projected["baseline_points_per_fixture"] = (
+        raw_points_per_fixture
+        * availability
+        * minutes_security
+    ).round(3)
+
+    fixture_summary = build_team_fixture_summary(
+        team_fixtures
+    )
+
     projected = projected.merge(
-        team_fixture_summary,
+        fixture_summary,
         on="team_name",
         how="left",
     )
@@ -365,20 +592,15 @@ def build_player_projections(
     )
 
     projected["expected_minutes"] = (
-        expected_minutes_per_fixture
+        MINUTES_PER_MATCH
+        * projected["minutes_security"]
+        * projected["availability_probability"]
         * projected["fixture_count"]
     ).round(1)
 
     projected["projected_points"] = (
         projected["baseline_points_per_fixture"]
         * projected["fixture_multiplier_total"]
-    ).round(2)
-
-    projected["projected_points_per_fixture"] = np.where(
-        projected["fixture_count"] > 0,
-        projected["projected_points"]
-        / projected["fixture_count"],
-        0.0,
     ).round(2)
 
     projected["projection_value"] = np.where(
