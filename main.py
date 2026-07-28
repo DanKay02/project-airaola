@@ -15,6 +15,9 @@ from airaola.models.projections import (
 from airaola.models.squad_rules import (
     validate_squad,
 )
+from airaola.optimisation.lineup_selector import (
+    select_gameweek_team,
+)
 from airaola.optimisation.squad_optimiser import (
     optimise_initial_squad,
 )
@@ -201,18 +204,18 @@ def print_projection_summary(
     )
 
     columns = [
-    "player_name",
-    "team_name",
-    "position",
-    "price",
-    "start_security",
-    "minutes_security",
-    "fixture_count",
-    "average_fixture_difficulty",
-    "expected_minutes",
-    "projected_points",
-    "projection_value",
-]
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+        "start_security",
+        "minutes_security",
+        "fixture_count",
+        "average_fixture_difficulty",
+        "expected_minutes",
+        "projected_points",
+        "projection_value",
+    ]
 
     leaders = (
         players[
@@ -274,18 +277,18 @@ def print_optimised_squad(
     )
 
     display_columns = [
-    "player_name",
-    "team_name",
-    "position",
-    "price",
-    "start_security",
-    "minutes_security",
-    "fixture_count",
-    "average_fixture_difficulty",
-    "expected_minutes",
-    "projected_points",
-    "projection_value",
-]
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+        "start_security",
+        "minutes_security",
+        "fixture_count",
+        "average_fixture_difficulty",
+        "expected_minutes",
+        "projected_points",
+        "projection_value",
+    ]
 
     print(
         ordered_squad[
@@ -334,8 +337,140 @@ def print_optimised_squad(
         print(f"- {error}")
 
 
+def print_starting_xi(
+    starting_xi: pd.DataFrame,
+) -> None:
+    """Display Airaola's selected starting XI."""
+
+    print()
+    print("=" * 60)
+    print("Gameweek Starting XI")
+    print("=" * 60)
+
+    position_order = {
+        "GKP": 1,
+        "DEF": 2,
+        "MID": 3,
+        "FWD": 4,
+    }
+
+    display = starting_xi.copy()
+
+    display["position_order"] = (
+        display["position"]
+        .map(position_order)
+    )
+
+    display["role"] = ""
+
+    display.loc[
+        display["is_captain"],
+        "role",
+    ] = "CAPTAIN"
+
+    display.loc[
+        display["is_vice_captain"],
+        "role",
+    ] = "VICE-CAPTAIN"
+
+    display = display.sort_values(
+        by=[
+            "position_order",
+            "projected_points",
+        ],
+        ascending=[
+            True,
+            False,
+        ],
+    )
+
+    columns = [
+        "player_name",
+        "team_name",
+        "position",
+        "role",
+        "minutes_security",
+        "expected_minutes",
+        "projected_points",
+    ]
+
+    print(
+        display[
+            columns
+        ].to_string(
+            index=False,
+            col_space=14,
+        )
+    )
+
+    formation = (
+        display["position"]
+        .value_counts()
+        .to_dict()
+    )
+
+    print()
+    print(
+        "Formation: "
+        f"{formation.get('DEF', 0)}-"
+        f"{formation.get('MID', 0)}-"
+        f"{formation.get('FWD', 0)}"
+    )
+
+    captain = display[
+        display["is_captain"]
+    ].iloc[0]
+
+    vice_captain = display[
+        display["is_vice_captain"]
+    ].iloc[0]
+
+    print(
+        f"Captain: {captain['player_name']}"
+    )
+
+    print(
+        "Vice-captain: "
+        f"{vice_captain['player_name']}"
+    )
+
+
+def print_bench(
+    bench: pd.DataFrame,
+) -> None:
+    """Display Airaola's substitute order."""
+
+    print()
+    print("=" * 60)
+    print("Substitutes")
+    print("=" * 60)
+
+    display = bench.sort_values(
+        by="bench_order"
+    )
+
+    columns = [
+        "bench_order",
+        "player_name",
+        "team_name",
+        "position",
+        "minutes_security",
+        "expected_minutes",
+        "projected_points",
+    ]
+
+    print(
+        display[
+            columns
+        ].to_string(
+            index=False,
+            col_space=14,
+        )
+    )
+
+
 def main() -> None:
-    """Run recruitment, fixtures, projections and optimisation."""
+    """Run recruitment, projections and matchday selection."""
 
     try:
         identity = load_club_identity()
@@ -392,6 +527,13 @@ def main() -> None:
         )
 
         print_optimised_squad(squad)
+
+        starting_xi, bench, _, _ = (
+            select_gameweek_team(squad)
+        )
+
+        print_starting_xi(starting_xi)
+        print_bench(bench)
 
     except FileNotFoundError as error:
         print(

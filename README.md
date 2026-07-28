@@ -86,3 +86,7 @@ The first release will:
 ### v0.1.7: Position-Aware Minutes Security
 
 > Project Airaola now models start security, positional involvement, sample confidence, and position-specific scoring routes. Goalkeepers face stricter eligibility rules, preventing backup players from being selected based on misleading small samples.
+
+### v0.1.8: Matchday Selection
+
+> Project Airaola can now convert its optimised 15-player squad into a legal starting XI, choose a formation, rank its substitutes, and assign captain and vice-captain duties using projected output and minutes security.
