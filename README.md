@@ -77,3 +77,8 @@ The first release will:
 
 > The fixture analysts have joined the backroom staff.  
 > Project Airaola can now inspect the live FPL calendar, map every club’s opponents and venues across the planning horizon, and automatically detect normal, blank, and double Gameweeks.
+
+### v0.1.6: Fixture-Adjusted Projections
+
+> The tactical analysis unit is operational.  
+> Project Airaola now adjusts every player projection according to fixture difficulty, venue, and fixture count. Blank Gameweeks contribute no fixture projection, while Double Gameweeks are evaluated as multiple independent matches.

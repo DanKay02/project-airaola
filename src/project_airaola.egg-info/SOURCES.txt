@@ -3,6 +3,7 @@ pyproject.toml
 src/airaola/__init__.py
 src/airaola/data/__init__.py
 src/airaola/data/fetch_fpl_data.py
+src/airaola/data/fixtures.py
 src/project_airaola.egg-info/PKG-INFO
 src/project_airaola.egg-info/SOURCES.txt
 src/project_airaola.egg-info/dependency_links.txt

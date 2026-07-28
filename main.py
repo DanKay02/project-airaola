@@ -188,7 +188,7 @@ def print_projection_summary(
     players: pd.DataFrame,
     planning_horizon: int,
 ) -> None:
-    """Display the highest baseline projections."""
+    """Display the highest fixture-adjusted projections."""
 
     print()
     print("=" * 60)
@@ -205,6 +205,8 @@ def print_projection_summary(
         "team_name",
         "position",
         "price",
+        "fixture_count",
+        "average_fixture_difficulty",
         "expected_minutes",
         "projected_points",
         "projection_value",
@@ -274,6 +276,8 @@ def print_optimised_squad(
         "team_name",
         "position",
         "price",
+        "fixture_count",
+        "average_fixture_difficulty",
         "expected_minutes",
         "projected_points",
         "projection_value",
@@ -362,7 +366,8 @@ def main() -> None:
 
         projected_players = (
             build_player_projections(
-                players,
+                players=players,
+                team_fixtures=fixture_rows,
                 planning_horizon=planning_horizon,
             )
         )
@@ -383,10 +388,6 @@ def main() -> None:
         )
 
         print_optimised_squad(squad)
-
-        # Reserved for v0.1.5B, when fixture_rows
-        # will directly influence player projections.
-        _ = fixture_rows
 
     except FileNotFoundError as error:
         print(
