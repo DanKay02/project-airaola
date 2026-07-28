@@ -72,3 +72,8 @@ The first release will:
 
 > The analysis department has opened its doors.  
 > Project Airaola now produces forward-looking player projections using recent form, points per game, points per 90, expected minutes and availability. Squad selection is now driven by projected performance rather than points already scored.
+
+### v0.1.5: Fixture Intelligence
+
+> The fixture analysts have joined the backroom staff.  
+> Project Airaola can now inspect the live FPL calendar, map every club’s opponents and venues across the planning horizon, and automatically detect normal, blank, and double Gameweeks.

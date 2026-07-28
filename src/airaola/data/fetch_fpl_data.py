@@ -23,7 +23,7 @@ def fetch_bootstrap_data() -> dict[str, Any]:
         FPL_BOOTSTRAP_URL,
         timeout=30,
         headers={
-            "User-Agent": "Project-Airaola/0.1.4",
+            "User-Agent": "Project-Airaola/0.1.5",
             "Accept": "application/json",
         },
     )
@@ -154,7 +154,8 @@ def save_processed_data(
     )
 
 
-def run_recruitment_pipeline() -> pd.DataFrame:
+def run_recruitment_pipeline(
+) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Run the complete recruitment data pipeline."""
 
     print(
@@ -162,6 +163,23 @@ def run_recruitment_pipeline() -> pd.DataFrame:
         "contacting FPL data source..."
     )
 
+    data = fetch_bootstrap_data()
+    save_raw_data(data)
+
+    players = build_player_dataframe(data)
+    save_processed_data(players)
+
+    print(
+        f"Recruitment Department: "
+        f"{len(players)} players registered."
+    )
+    print(f"Raw data saved to: {RAW_DATA_PATH}")
+    print(
+        f"Processed data saved to: "
+        f"{PROCESSED_DATA_PATH}"
+    )
+
+    return players, data
     data = fetch_bootstrap_data()
     save_raw_data(data)
 
@@ -183,4 +201,4 @@ def run_recruitment_pipeline() -> pd.DataFrame:
         f"{PROCESSED_DATA_PATH}"
     )
 
-    return players
+    return players, data
