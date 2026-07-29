@@ -277,20 +277,23 @@ def print_optimised_squad(
     )
 
     display_columns = [
-        "player_name",
-        "team_name",
-        "position",
-        "price",
-        "start_security",
-        "minutes_security",
-        "fixture_count",
-        "average_fixture_difficulty",
-        "expected_minutes",
-        "projected_points",
-        "projection_value",
-        "projected_captain_gameweeks",
-        "captaincy_appearances",
-    ]
+    "player_name",
+    "team_name",
+    "position",
+    "price",
+    "start_security",
+    "minutes_security",
+    "fixture_count",
+    "average_fixture_difficulty",
+    "expected_minutes",
+    "projected_points",
+    "projection_value",
+    "projected_start_gameweeks",
+    "projected_starts",
+    "projected_captain_gameweeks",
+    "captaincy_appearances",
+    "projected_vice_captain_gameweeks",
+]
 
     print(
         ordered_squad[

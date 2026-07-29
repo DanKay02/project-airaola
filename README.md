@@ -100,3 +100,11 @@ The first release will:
 > Project Airaola now incorporates captaincy value directly into initial squad construction. The projection engine creates separate player forecasts for each Gameweek in the planning horizon, while the optimiser selects one projected captain per Gameweek and rewards squads containing strong rotating armband options.
 
 > The selected squad records each player's projected captain Gameweeks and total captaincy appearances. Long-term squad strength remains part of the objective, but premium players can now justify their price through realistic captaincy utility rather than being assessed only on ordinary points and value.
+
+### v0.1.11: Lineup-Aware Horizon Optimisation
+
+> Project Airaola now optimises a legal starting XI for every Gameweek in the planning horizon alongside the 15-player squad. Weekly starter selections obey FPL formation requirements, while projected captains and vice-captains must be included in that Gameweek's starting XI.
+
+> The optimisation objective now rewards projected points from weekly starters, captaincy bonuses and reduced bench-cover value. This prevents substitutes from receiving the same strategic value as active starters and produces a connected five-Gameweek squad, lineup and captaincy plan.
+
+> The selected squad now records projected start Gameweeks, projected start counts, captain Gameweeks and vice-captain Gameweeks for inspection. Future vice-captain scoring remains a planned refinement because the current model treats vice-captaincy as a legal assignment rather than a weighted strategic contribution.
