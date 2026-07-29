@@ -22,8 +22,8 @@ from airaola.optimisation.squad_optimiser import (
     optimise_initial_squad,
 )
 from airaola.optimisation.transfer_planner import (
-    TransferRecommendation,
-    recommend_single_transfer,
+    TransferPlan,
+    recommend_transfer_strategy,
 )
 
 
@@ -484,74 +484,123 @@ def print_bench(
     )
 
 
-def print_transfer_recommendation(
-    recommendation: TransferRecommendation,
+def print_transfer_plan(
+    plan: TransferPlan,
 ) -> None:
-    """Display Airaola's transfer decision."""
+    """Display Airaola's transfer-bank strategy."""
 
     print()
     print("=" * 60)
-    print("Transfer Department")
+    print("Transfer Strategy Department")
     print("=" * 60)
 
-    if recommendation.action == "HOLD":
-        print("Decision: HOLD TRANSFER")
-        print(
-            "Recommendation strength: "
-            f"{recommendation.recommendation_strength}"
-        )
-        print(
-            "Money in bank: "
-            f"£{recommendation.bank_before:.1f}m"
-        )
-        print(
-            "Best available projected gain: "
-            f"{recommendation.projected_gain:+.2f}"
-        )
-        print(
-            f"Reason: {recommendation.reason}"
-        )
-        return
-
-    print("Decision: MAKE TRANSFER")
     print(
-        "Recommendation strength: "
-        f"{recommendation.recommendation_strength}"
-    )
-
-    print()
-    print(
-        "Sell: "
-        f"{recommendation.player_out_name} "
-        f"£{recommendation.selling_price:.1f}m"
-    )
-    print(
-        "Buy: "
-        f"{recommendation.player_in_name} "
-        f"£{recommendation.purchase_price:.1f}m"
-    )
-    print(
-        "Position: "
-        f"{recommendation.position}"
-    )
-    print(
-        "Five-Gameweek projected gain: "
-        f"{recommendation.projected_gain:+.2f}"
-    )
-    print(
-        "Next-Gameweek projected gain: "
-        f"{recommendation.next_gameweek_gain:+.2f}"
+        "Free transfers available: "
+        f"{plan.free_transfers_before}"
     )
     print(
         "Money in bank before: "
-        f"£{recommendation.bank_before:.1f}m"
+        f"£{plan.bank_before:.1f}m"
+    )
+
+    if plan.decision in {"ROLL", "HOLD"}:
+        print()
+        print(f"Decision: {plan.decision} TRANSFER")
+        print(
+            "Recommendation strength: "
+            f"{plan.recommendation_strength}"
+        )
+        print(
+            "Projected free transfers next Gameweek: "
+            f"{plan.free_transfers_next_gameweek}"
+        )
+        print(
+            "Best immediate projected gain: "
+            f"{plan.gross_projected_gain:+.2f}"
+        )
+        print(
+            f"Reason: {plan.reason}"
+        )
+        return
+
+    print()
+    print(
+        "Decision: EXECUTE "
+        f"{plan.transfers_used} "
+        "TRANSFER"
+        f"{'S' if plan.transfers_used != 1 else ''}"
+    )
+    print(
+        "Recommendation strength: "
+        f"{plan.recommendation_strength}"
+    )
+    print(
+        "Free transfers spent: "
+        f"{plan.free_transfers_spent}"
+    )
+    print(
+        "Hit transfers: "
+        f"{plan.hit_transfers}"
+    )
+    print(
+        "Hit cost: "
+        f"-{plan.hit_cost:.0f} points"
+    )
+
+    print()
+    print("Recommended transfers:")
+
+    for transfer_number, move in enumerate(
+        plan.transfers,
+        start=1,
+    ):
+        print(
+            f"{transfer_number}. "
+            f"SELL {move.player_out_name} "
+            f"£{move.selling_price:.1f}m "
+            "→ "
+            f"BUY {move.player_in_name} "
+            f"£{move.purchase_price:.1f}m "
+            f"({move.position})"
+        )
+        print(
+            "   Five-Gameweek gain: "
+            f"{move.projected_gain:+.2f} | "
+            "Next-Gameweek gain: "
+            f"{move.next_gameweek_gain:+.2f}"
+        )
+
+    print()
+    print(
+        "Gross five-Gameweek gain: "
+        f"{plan.gross_projected_gain:+.2f}"
+    )
+    print(
+        "Next-Gameweek gain: "
+        f"{plan.next_gameweek_gain:+.2f}"
+    )
+    print(
+        "Transfer-bank opportunity cost: "
+        f"-{plan.transfer_bank_cost:.2f}"
+    )
+    print(
+        "Hit cost: "
+        f"-{plan.hit_cost:.2f}"
+    )
+    print(
+        "Net strategic gain: "
+        f"{plan.net_strategic_gain:+.2f}"
     )
     print(
         "Money in bank after: "
-        f"£{recommendation.bank_after:.1f}m"
+        f"£{plan.bank_after:.1f}m"
     )
     print(
-        f"Reason: {recommendation.reason}"
+        "Projected free transfers next Gameweek: "
+        f"{plan.free_transfers_next_gameweek}"
+    )
+    print(
+        f"Reason: {plan.reason}"
     )
 
 
@@ -621,21 +670,26 @@ def main() -> None:
         print_starting_xi(starting_xi)
         print_bench(bench)
 
+        free_transfers_available = 1
+
         print()
         print(
-            "Transfer Department: "
-            "evaluating one-transfer improvements..."
+            "Transfer Strategy Department: "
+            "evaluating zero-to-five-transfer plans..."
         )
 
-        transfer_recommendation = (
-            recommend_single_transfer(
+        transfer_plan = (
+            recommend_transfer_strategy(
                 current_squad=squad,
                 player_pool=projected_players,
+                free_transfers_available=(
+                    free_transfers_available
+                ),
             )
         )
 
-        print_transfer_recommendation(
-            transfer_recommendation
+        print_transfer_plan(
+            transfer_plan
         )
 
     except FileNotFoundError as error:
