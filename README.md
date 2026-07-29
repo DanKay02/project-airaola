@@ -118,3 +118,17 @@ The first release will:
 > Airaola now avoids unnecessary transfers by requiring a projected improvement of at least 1.5 points across the planning horizon. When no legal move clears this threshold, the engine recommends holding the transfer rather than making a low-value change.
 
 > Transfer recommendations now report the proposed player out, player in, transfer cost, projected gain, money remaining and recommendation strength. The current version assumes each player's present FPL price is also their selling price. Persistent purchase-price and official selling-value calculations remain planned future improvements.
+
+### v0.1.13: Transfer-Bank Strategy Engine
+
+> Project Airaola can now evaluate transfer plans ranging from zero to five moves in a single Gameweek. The engine understands that managers may bank up to five free transfers and can compare the value of acting immediately against preserving flexibility for a later squad rebuild.
+
+> Each proposed strategy is assessed using its gross five-Gameweek projected gain, next-Gameweek improvement, transfer-bank opportunity cost and any points hits incurred beyond the available free-transfer allowance. Additional transfers beyond the current bank are charged at four points each.
+
+> Airaola now distinguishes between executing transfers, rolling a transfer and holding at the five-transfer cap. When no available plan clears the minimum net strategic-gain threshold, the manager preserves the transfer bank rather than making a low-value move.
+
+> Recommended transfer plans explicitly list every player to sell and buy, along with position, price, individual projected gain, hit cost, remaining money in the bank and expected free transfers for the following Gameweek.
+
+> The reporting logic now preserves the best rejected plan by net strategic value. This ensures that ROLL and HOLD decisions display the same gross gain, strategic costs, hit cost and net result that were actually used by the decision engine.
+
+> The current version uses manually supplied free-transfer availability and assumes current FPL prices are also selling prices. Persistent squad state, automatic transfer-bank tracking and official purchase-price selling-value calculations remain planned future upgrades.
