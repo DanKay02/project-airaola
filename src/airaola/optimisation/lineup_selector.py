@@ -24,16 +24,18 @@ MAX_STARTERS_BY_POSITION = {
 def validate_squad_for_lineup(
     squad: pd.DataFrame,
 ) -> None:
-    """Confirm the squad contains everything needed for selection."""
+    """Confirm the squad contains matchday projection data."""
 
     required_columns = {
         "id",
         "player_name",
         "team_name",
         "position",
-        "projected_points",
         "minutes_security",
-        "expected_minutes",
+        "next_gameweek",
+        "next_fixture_count",
+        "next_gameweek_expected_minutes",
+        "next_gameweek_projected_points",
     }
 
     missing_columns = required_columns.difference(
@@ -56,40 +58,33 @@ def validate_squad_for_lineup(
 def prepare_lineup_pool(
     squad: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Prepare integer scores for the starting-XI optimiser."""
+    """Prepare next-Gameweek scores for lineup optimisation."""
 
     pool = squad.copy()
 
-    pool["projected_points"] = pd.to_numeric(
-        pool["projected_points"],
-        errors="coerce",
-    ).fillna(0.0)
+    numeric_columns = [
+        "minutes_security",
+        "next_fixture_count",
+        "next_gameweek_expected_minutes",
+        "next_gameweek_projected_points",
+    ]
 
-    pool["minutes_security"] = pd.to_numeric(
-        pool["minutes_security"],
-        errors="coerce",
-    ).fillna(0.0)
-
-    pool["expected_minutes"] = pd.to_numeric(
-        pool["expected_minutes"],
-        errors="coerce",
-    ).fillna(0.0)
+    for column in numeric_columns:
+        pool[column] = pd.to_numeric(
+            pool[column],
+            errors="coerce",
+        ).fillna(0.0)
 
     pool["lineup_score"] = (
-        (
-            pool["projected_points"]
-            * 0.80
-        )
+        pool["next_gameweek_projected_points"]
+        * 0.85
+        + pool["minutes_security"]
+        * 0.75
         + (
-            pool["minutes_security"]
-            * 5.0
-            * 0.15
-        )
-        + (
-            pool["expected_minutes"]
+            pool["next_gameweek_expected_minutes"]
             / 90
-            * 0.05
         )
+        * 0.25
     )
 
     pool["lineup_score_integer"] = (
@@ -105,7 +100,7 @@ def prepare_lineup_pool(
 def select_starting_xi(
     squad: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Select the strongest legal starting XI."""
+    """Select the strongest legal next-Gameweek XI."""
 
     validate_squad_for_lineup(squad)
 
@@ -193,25 +188,22 @@ def select_starting_xi(
 def select_captains(
     starting_xi: pd.DataFrame,
 ) -> tuple[int, int]:
-    """
-    Select captain and vice-captain.
-
-    Captaincy rewards projected points while also favouring secure
-    minutes. The vice-captain must be a different player.
-    """
+    """Select next-Gameweek captain and vice-captain."""
 
     candidates = starting_xi.copy()
 
     candidates["captain_score"] = (
-        candidates["projected_points"]
+        candidates[
+            "next_gameweek_projected_points"
+        ]
         * candidates["minutes_security"]
     )
 
     candidates = candidates.sort_values(
         by=[
             "captain_score",
-            "projected_points",
-            "expected_minutes",
+            "next_gameweek_projected_points",
+            "next_gameweek_expected_minutes",
         ],
         ascending=[
             False,
@@ -241,12 +233,7 @@ def build_bench(
     squad: pd.DataFrame,
     starting_xi: pd.DataFrame,
 ) -> pd.DataFrame:
-    """
-    Build the substitute bench.
-
-    Outfield players are ordered by projection and minutes security.
-    The reserve goalkeeper is kept in the goalkeeper bench slot.
-    """
+    """Rank substitutes using next-Gameweek projections."""
 
     starter_ids = set(
         starting_xi["id"].astype(int)
@@ -267,15 +254,17 @@ def build_bench(
     ].copy()
 
     outfield_bench["bench_score"] = (
-        outfield_bench["projected_points"]
+        outfield_bench[
+            "next_gameweek_projected_points"
+        ]
         * outfield_bench["minutes_security"]
     )
 
     outfield_bench = outfield_bench.sort_values(
         by=[
             "bench_score",
-            "projected_points",
-            "expected_minutes",
+            "next_gameweek_projected_points",
+            "next_gameweek_expected_minutes",
         ],
         ascending=[
             False,
@@ -308,7 +297,7 @@ def select_gameweek_team(
     int,
     int,
 ]:
-    """Select XI, bench, captain and vice-captain."""
+    """Select next-GW XI, bench and captaincy."""
 
     starting_xi = select_starting_xi(
         squad

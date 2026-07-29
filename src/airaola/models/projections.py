@@ -417,10 +417,10 @@ def calculate_fixture_multiplier(
     )
 
 
-def build_team_fixture_summary(
+def prepare_fixture_multipliers(
     team_fixtures: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Summarise fixture quantity and difficulty by club."""
+    """Validate fixtures and calculate their multipliers."""
 
     required_columns = {
         "team_name",
@@ -441,6 +441,28 @@ def build_team_fixture_summary(
 
     fixtures = team_fixtures.copy()
 
+    fixtures["event"] = pd.to_numeric(
+        fixtures["event"],
+        errors="coerce",
+    )
+
+    fixtures = fixtures.dropna(
+        subset=[
+            "event",
+            "team_name",
+        ]
+    ).copy()
+
+    if fixtures.empty:
+        raise ValueError(
+            "No usable fixtures are available "
+            "for projection calculations."
+        )
+
+    fixtures["event"] = (
+        fixtures["event"].astype(int)
+    )
+
     fixtures["fixture_multiplier"] = (
         fixtures.apply(
             lambda row: calculate_fixture_multiplier(
@@ -450,6 +472,14 @@ def build_team_fixture_summary(
             axis=1,
         )
     )
+
+    return fixtures
+
+
+def build_horizon_fixture_summary(
+    fixtures: pd.DataFrame,
+) -> pd.DataFrame:
+    """Summarise every fixture in the planning horizon."""
 
     return (
         fixtures
@@ -472,12 +502,53 @@ def build_team_fixture_summary(
     )
 
 
+def build_next_gameweek_fixture_summary(
+    fixtures: pd.DataFrame,
+) -> tuple[int, pd.DataFrame]:
+    """Summarise only the earliest Gameweek in the horizon."""
+
+    next_gameweek = int(
+        fixtures["event"].min()
+    )
+
+    next_fixtures = fixtures[
+        fixtures["event"] == next_gameweek
+    ].copy()
+
+    summary = (
+        next_fixtures
+        .groupby("team_name")
+        .agg(
+            next_fixture_count=(
+                "event",
+                "count",
+            ),
+            next_fixture_multiplier_total=(
+                "fixture_multiplier",
+                "sum",
+            ),
+            next_average_fixture_difficulty=(
+                "difficulty",
+                "mean",
+            ),
+        )
+        .reset_index()
+    )
+
+    return next_gameweek, summary
+
+
 def build_player_projections(
     players: pd.DataFrame,
     team_fixtures: pd.DataFrame,
     planning_horizon: int = DEFAULT_HORIZON,
 ) -> pd.DataFrame:
-    """Build position-aware, fixture-adjusted projections."""
+    """
+    Build long-term and next-Gameweek player projections.
+
+    Long-term projections support squad construction.
+    Next-Gameweek projections support matchday decisions.
+    """
 
     if planning_horizon <= 0:
         raise ValueError(
@@ -520,8 +591,10 @@ def build_player_projections(
         projected
     )
 
-    availability = calculate_availability_probability(
-        projected
+    availability = (
+        calculate_availability_probability(
+            projected
+        )
     )
 
     start_security = calculate_start_security(
@@ -565,14 +638,36 @@ def build_player_projections(
         * minutes_security
     ).round(3)
 
-    fixture_summary = build_team_fixture_summary(
+    fixtures = prepare_fixture_multipliers(
         team_fixtures
     )
 
+    horizon_summary = (
+        build_horizon_fixture_summary(
+            fixtures
+        )
+    )
+
+    next_gameweek, next_summary = (
+        build_next_gameweek_fixture_summary(
+            fixtures
+        )
+    )
+
     projected = projected.merge(
-        fixture_summary,
+        horizon_summary,
         on="team_name",
         how="left",
+    )
+
+    projected = projected.merge(
+        next_summary,
+        on="team_name",
+        how="left",
+    )
+
+    projected["next_gameweek"] = (
+        next_gameweek
     )
 
     projected["fixture_count"] = (
@@ -591,6 +686,30 @@ def build_player_projections(
         .round(2)
     )
 
+    projected["next_fixture_count"] = (
+        projected["next_fixture_count"]
+        .fillna(0)
+        .astype(int)
+    )
+
+    projected[
+        "next_fixture_multiplier_total"
+    ] = (
+        projected[
+            "next_fixture_multiplier_total"
+        ]
+        .fillna(0.0)
+    )
+
+    projected[
+        "next_average_fixture_difficulty"
+    ] = (
+        projected[
+            "next_average_fixture_difficulty"
+        ]
+        .round(2)
+    )
+
     projected["expected_minutes"] = (
         MINUTES_PER_MATCH
         * projected["minutes_security"]
@@ -606,6 +725,35 @@ def build_player_projections(
     projected["projection_value"] = np.where(
         projected["price"] > 0,
         projected["projected_points"]
+        / projected["price"],
+        0.0,
+    ).round(3)
+
+    projected[
+        "next_gameweek_expected_minutes"
+    ] = (
+        MINUTES_PER_MATCH
+        * projected["minutes_security"]
+        * projected["availability_probability"]
+        * projected["next_fixture_count"]
+    ).round(1)
+
+    projected[
+        "next_gameweek_projected_points"
+    ] = (
+        projected["baseline_points_per_fixture"]
+        * projected[
+            "next_fixture_multiplier_total"
+        ]
+    ).round(2)
+
+    projected[
+        "next_gameweek_projection_value"
+    ] = np.where(
+        projected["price"] > 0,
+        projected[
+            "next_gameweek_projected_points"
+        ]
         / projected["price"],
         0.0,
     ).round(3)

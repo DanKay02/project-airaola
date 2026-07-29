@@ -342,9 +342,13 @@ def print_starting_xi(
 ) -> None:
     """Display Airaola's selected starting XI."""
 
+    gameweek = int(
+        starting_xi["next_gameweek"].iloc[0]
+    )
+
     print()
     print("=" * 60)
-    print("Gameweek Starting XI")
+    print(f"Gameweek {gameweek} Starting XI")
     print("=" * 60)
 
     position_order = {
@@ -376,7 +380,7 @@ def print_starting_xi(
     display = display.sort_values(
         by=[
             "position_order",
-            "projected_points",
+            "next_gameweek_projected_points",
         ],
         ascending=[
             True,
@@ -390,8 +394,9 @@ def print_starting_xi(
         "position",
         "role",
         "minutes_security",
-        "expected_minutes",
-        "projected_points",
+        "next_fixture_count",
+        "next_gameweek_expected_minutes",
+        "next_gameweek_projected_points",
     ]
 
     print(
@@ -450,14 +455,15 @@ def print_bench(
     )
 
     columns = [
-        "bench_order",
-        "player_name",
-        "team_name",
-        "position",
-        "minutes_security",
-        "expected_minutes",
-        "projected_points",
-    ]
+    "bench_order",
+    "player_name",
+    "team_name",
+    "position",
+    "minutes_security",
+    "next_fixture_count",
+    "next_gameweek_expected_minutes",
+    "next_gameweek_projected_points",
+]
 
     print(
         display[
