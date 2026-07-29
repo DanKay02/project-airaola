@@ -90,3 +90,7 @@ The first release will:
 ### v0.1.8: Matchday Selection
 
 > Project Airaola can now convert its optimised 15-player squad into a legal starting XI, choose a formation, rank its substitutes, and assign captain and vice-captain duties using projected output and minutes security.
+
+### v0.1.9: Single-Gameweek Decision Engine
+
+> Project Airaola now separates long-term squad planning from weekly matchday decisions. The 15-player squad is optimised across a five-Gameweek horizon, while the starting XI, bench order, captain and vice-captain are selected using only the immediate Gameweek projection.
