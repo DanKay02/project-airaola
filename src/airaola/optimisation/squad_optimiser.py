@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 from ortools.sat.python import cp_model
 
@@ -19,18 +21,50 @@ POSITION_REQUIREMENTS = {
     "FWD": 3,
 }
 
+GAMEWEEK_POINTS_PATTERN = re.compile(
+    r"^gw_(\d+)_projected_points$"
+)
+
+
+def discover_gameweek_projection_columns(
+    players: pd.DataFrame,
+) -> dict[int, str]:
+    """Find per-Gameweek projection columns."""
+
+    discovered: dict[int, str] = {}
+
+    for column in players.columns:
+        match = GAMEWEEK_POINTS_PATTERN.match(
+            str(column)
+        )
+
+        if match:
+            gameweek = int(match.group(1))
+            discovered[gameweek] = str(column)
+
+    if not discovered:
+        raise ValueError(
+            "Player data does not contain any "
+            "per-Gameweek projection columns."
+        )
+
+    return dict(
+        sorted(discovered.items())
+    )
+
 
 def prepare_optimisation_pool(
     players: pd.DataFrame,
-) -> pd.DataFrame:
+) -> tuple[
+    pd.DataFrame,
+    dict[int, str],
+]:
     """
-    Prepare player data for squad optimisation.
+    Prepare player data for captaincy-aware squad optimisation.
 
-    Prices are converted into integer tenths because OR-Tools CP-SAT
-    requires integer coefficients.
-
-    Projected points are multiplied by 100 so decimal projections can
-    still be optimised accurately.
+    The normal projected score rewards total squad strength across the
+    planning horizon. Separate per-Gameweek scores allow the optimiser
+    to add one captain bonus in every Gameweek.
     """
 
     required_columns = {
@@ -55,20 +89,28 @@ def prepare_optimisation_pool(
             + ", ".join(sorted(missing_columns))
         )
 
+    gameweek_columns = (
+        discover_gameweek_projection_columns(
+            players
+        )
+    )
+
     pool = players.copy()
 
-    pool["minutes_security"] = pd.to_numeric(
-        pool["minutes_security"],
-        errors="coerce",
-    )
+    numeric_columns = [
+        "minutes_security",
+        "expected_minutes",
+        "price",
+        "projected_points",
+        *gameweek_columns.values(),
+    ]
 
-    pool["expected_minutes"] = pd.to_numeric(
-        pool["expected_minutes"],
-        errors="coerce",
-    )
+    for column in numeric_columns:
+        pool[column] = pd.to_numeric(
+            pool[column],
+            errors="coerce",
+        )
 
-    # Keep only available or doubtful players with a realistic
-    # chance of playing meaningful minutes.
     pool = pool[
         pool["status"].isin(["a", "d"])
         & (
@@ -81,8 +123,6 @@ def prepare_optimisation_pool(
         )
     ].copy()
 
-    # Goalkeepers require much stronger selection security because
-    # backup keepers usually receive no substitute minutes.
     pool = pool[
         (
             pool["position"] != "GKP"
@@ -113,25 +153,34 @@ def prepare_optimisation_pool(
     ].copy()
 
     pool["price_tenths"] = (
-        pd.to_numeric(
-            pool["price"],
-            errors="coerce",
-        )
+        pool["price"]
         .mul(10)
         .round()
         .astype(int)
     )
 
     pool["optimisation_score"] = (
-        pd.to_numeric(
-            pool["projected_points"],
-            errors="coerce",
-        )
+        pool["projected_points"]
         .fillna(0.0)
         .mul(100)
         .round()
         .astype(int)
     )
+
+    for gameweek, column in (
+        gameweek_columns.items()
+    ):
+        score_column = (
+            f"gw_{gameweek}_captain_score"
+        )
+
+        pool[score_column] = (
+            pool[column]
+            .fillna(0.0)
+            .mul(100)
+            .round()
+            .astype(int)
+        )
 
     pool = pool[
         pool["price_tenths"] > 0
@@ -143,17 +192,16 @@ def prepare_optimisation_pool(
             "the optimisation pool."
         )
 
-    return pool.reset_index(drop=True)
+    return (
+        pool.reset_index(drop=True),
+        gameweek_columns,
+    )
 
 
 def validate_position_pool(
     pool: pd.DataFrame,
 ) -> None:
-    """
-    Confirm enough eligible players exist in every position.
-
-    This produces a clearer error before the optimiser is started.
-    """
+    """Confirm enough eligible players exist in every position."""
 
     for position, required_count in (
         POSITION_REQUIREMENTS.items()
@@ -174,19 +222,20 @@ def optimise_initial_squad(
     players: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Select the legal 15-player squad with the highest projected score.
+    Select a legal, captaincy-aware 15-player squad.
 
-    Constraints:
-    - exactly 15 players
-    - exactly 2 GKP
-    - exactly 5 DEF
-    - exactly 5 MID
-    - exactly 3 FWD
-    - maximum 3 players per club
-    - maximum £100.0m total cost
+    The objective contains:
+    - every selected player's total planning-horizon projection
+    - one additional projected score for the best captain in each
+      individual Gameweek
+
+    This reflects the FPL rule that the captain's points are doubled.
     """
 
-    pool = prepare_optimisation_pool(players)
+    pool, gameweek_columns = (
+        prepare_optimisation_pool(players)
+    )
+
     validate_position_pool(pool)
 
     model = cp_model.CpModel()
@@ -198,8 +247,22 @@ def optimise_initial_squad(
         for index, player in pool.iterrows()
     }
 
+    captain = {
+        (
+            gameweek,
+            index,
+        ): model.new_bool_var(
+            "captain_"
+            f"gw_{gameweek}_"
+            f"player_{int(pool.loc[index, 'id'])}"
+        )
+        for gameweek in gameweek_columns
+        for index in pool.index
+    }
+
     model.add(
-        sum(selected.values()) == SQUAD_SIZE
+        sum(selected.values())
+        == SQUAD_SIZE
     )
 
     for position, required_count in (
@@ -246,17 +309,62 @@ def optimise_initial_squad(
         <= BUDGET_LIMIT_TENTHS
     )
 
-    model.maximize(
-        sum(
-            selected[index]
-            * int(
-                pool.loc[
-                    index,
-                    "optimisation_score",
+    for gameweek in gameweek_columns:
+        model.add(
+            sum(
+                captain[
+                    (
+                        gameweek,
+                        index,
+                    )
                 ]
+                for index in pool.index
             )
-            for index in pool.index
+            == 1
         )
+
+        for index in pool.index:
+            model.add(
+                captain[
+                    (
+                        gameweek,
+                        index,
+                    )
+                ]
+                <= selected[index]
+            )
+
+    squad_score = sum(
+        selected[index]
+        * int(
+            pool.loc[
+                index,
+                "optimisation_score",
+            ]
+        )
+        for index in pool.index
+    )
+
+    captaincy_score = sum(
+        captain[
+            (
+                gameweek,
+                index,
+            )
+        ]
+        * int(
+            pool.loc[
+                index,
+                f"gw_{gameweek}_captain_score",
+            ]
+        )
+        for gameweek in gameweek_columns
+        for index in pool.index
+    )
+
+    model.maximize(
+        squad_score
+        + captaincy_score
     )
 
     solver = cp_model.CpSolver()
@@ -274,7 +382,7 @@ def optimise_initial_squad(
     if status not in valid_statuses:
         raise RuntimeError(
             "Project Airaola could not find "
-            "a legal projected squad."
+            "a legal captaincy-aware squad."
         )
 
     selected_indexes = [
@@ -292,5 +400,58 @@ def optimise_initial_squad(
     )
 
     squad["selected_by_optimiser"] = True
+
+    captaincy_gameweeks: dict[int, list[int]] = {
+        int(player_id): []
+        for player_id in squad["id"]
+    }
+
+    for gameweek in gameweek_columns:
+        for index in selected_indexes:
+            if solver.value(
+                captain[
+                    (
+                        gameweek,
+                        index,
+                    )
+                ]
+            ) == 1:
+                player_id = int(
+                    pool.loc[index, "id"]
+                )
+
+                captaincy_gameweeks[
+                    player_id
+                ].append(gameweek)
+
+    squad["projected_captain_gameweeks"] = (
+        squad["id"]
+        .astype(int)
+        .map(
+            lambda player_id: ",".join(
+                str(gameweek)
+                for gameweek in (
+                    captaincy_gameweeks.get(
+                        player_id,
+                        [],
+                    )
+                )
+            )
+        )
+    )
+
+    squad["captaincy_appearances"] = (
+        squad["id"]
+        .astype(int)
+        .map(
+            lambda player_id: len(
+                captaincy_gameweeks.get(
+                    player_id,
+                    [],
+                )
+            )
+        )
+        .astype(int)
+    )
 
     return squad.reset_index(drop=True)

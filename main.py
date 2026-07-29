@@ -288,6 +288,8 @@ def print_optimised_squad(
         "expected_minutes",
         "projected_points",
         "projection_value",
+        "projected_captain_gameweeks",
+        "captaincy_appearances",
     ]
 
     print(

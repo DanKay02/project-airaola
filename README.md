@@ -94,3 +94,9 @@ The first release will:
 ### v0.1.9: Single-Gameweek Decision Engine
 
 > Project Airaola now separates long-term squad planning from weekly matchday decisions. The 15-player squad is optimised across a five-Gameweek horizon, while the starting XI, bench order, captain and vice-captain are selected using only the immediate Gameweek projection.
+
+### v0.1.10: Captaincy-Aware Squad Optimisation
+
+> Project Airaola now incorporates captaincy value directly into initial squad construction. The projection engine creates separate player forecasts for each Gameweek in the planning horizon, while the optimiser selects one projected captain per Gameweek and rewards squads containing strong rotating armband options.
+
+> The selected squad records each player's projected captain Gameweeks and total captaincy appearances. Long-term squad strength remains part of the objective, but premium players can now justify their price through realistic captaincy utility rather than being assessed only on ordinary points and value.
