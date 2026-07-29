@@ -108,3 +108,13 @@ The first release will:
 > The optimisation objective now rewards projected points from weekly starters, captaincy bonuses and reduced bench-cover value. This prevents substitutes from receiving the same strategic value as active starters and produces a connected five-Gameweek squad, lineup and captaincy plan.
 
 > The selected squad now records projected start Gameweeks, projected start counts, captain Gameweeks and vice-captain Gameweeks for inspection. Future vice-captain scoring remains a planned refinement because the current model treats vice-captaincy as a legal assignment rather than a weighted strategic contribution.
+
+### v0.1.12: Single-Transfer Planner
+
+> Project Airaola can now evaluate legal one-player transfer opportunities using the current projected squad and full player pool. The first transfer-planning model considers one player out and one player in while preserving FPL position requirements, the £100.0m budget and the maximum of three players per club.
+
+> Transfer targets are filtered using availability and minutes security before being compared across the five-Gameweek planning horizon. Each legal move is assessed using its projected long-term gain, next-Gameweek gain, remaining money in the bank and target reliability.
+
+> Airaola now avoids unnecessary transfers by requiring a projected improvement of at least 1.5 points across the planning horizon. When no legal move clears this threshold, the engine recommends holding the transfer rather than making a low-value change.
+
+> Transfer recommendations now report the proposed player out, player in, transfer cost, projected gain, money remaining and recommendation strength. The current version assumes each player's present FPL price is also their selling price. Persistent purchase-price and official selling-value calculations remain planned future improvements.

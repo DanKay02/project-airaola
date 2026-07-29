@@ -21,6 +21,10 @@ from airaola.optimisation.lineup_selector import (
 from airaola.optimisation.squad_optimiser import (
     optimise_initial_squad,
 )
+from airaola.optimisation.transfer_planner import (
+    TransferRecommendation,
+    recommend_single_transfer,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -277,23 +281,23 @@ def print_optimised_squad(
     )
 
     display_columns = [
-    "player_name",
-    "team_name",
-    "position",
-    "price",
-    "start_security",
-    "minutes_security",
-    "fixture_count",
-    "average_fixture_difficulty",
-    "expected_minutes",
-    "projected_points",
-    "projection_value",
-    "projected_start_gameweeks",
-    "projected_starts",
-    "projected_captain_gameweeks",
-    "captaincy_appearances",
-    "projected_vice_captain_gameweeks",
-]
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+        "start_security",
+        "minutes_security",
+        "fixture_count",
+        "average_fixture_difficulty",
+        "expected_minutes",
+        "projected_points",
+        "projection_value",
+        "projected_start_gameweeks",
+        "projected_starts",
+        "projected_captain_gameweeks",
+        "captaincy_appearances",
+        "projected_vice_captain_gameweeks",
+    ]
 
     print(
         ordered_squad[
@@ -460,15 +464,15 @@ def print_bench(
     )
 
     columns = [
-    "bench_order",
-    "player_name",
-    "team_name",
-    "position",
-    "minutes_security",
-    "next_fixture_count",
-    "next_gameweek_expected_minutes",
-    "next_gameweek_projected_points",
-]
+        "bench_order",
+        "player_name",
+        "team_name",
+        "position",
+        "minutes_security",
+        "next_fixture_count",
+        "next_gameweek_expected_minutes",
+        "next_gameweek_projected_points",
+    ]
 
     print(
         display[
@@ -477,6 +481,77 @@ def print_bench(
             index=False,
             col_space=14,
         )
+    )
+
+
+def print_transfer_recommendation(
+    recommendation: TransferRecommendation,
+) -> None:
+    """Display Airaola's transfer decision."""
+
+    print()
+    print("=" * 60)
+    print("Transfer Department")
+    print("=" * 60)
+
+    if recommendation.action == "HOLD":
+        print("Decision: HOLD TRANSFER")
+        print(
+            "Recommendation strength: "
+            f"{recommendation.recommendation_strength}"
+        )
+        print(
+            "Money in bank: "
+            f"£{recommendation.bank_before:.1f}m"
+        )
+        print(
+            "Best available projected gain: "
+            f"{recommendation.projected_gain:+.2f}"
+        )
+        print(
+            f"Reason: {recommendation.reason}"
+        )
+        return
+
+    print("Decision: MAKE TRANSFER")
+    print(
+        "Recommendation strength: "
+        f"{recommendation.recommendation_strength}"
+    )
+
+    print()
+    print(
+        "Sell: "
+        f"{recommendation.player_out_name} "
+        f"£{recommendation.selling_price:.1f}m"
+    )
+    print(
+        "Buy: "
+        f"{recommendation.player_in_name} "
+        f"£{recommendation.purchase_price:.1f}m"
+    )
+    print(
+        "Position: "
+        f"{recommendation.position}"
+    )
+    print(
+        "Five-Gameweek projected gain: "
+        f"{recommendation.projected_gain:+.2f}"
+    )
+    print(
+        "Next-Gameweek projected gain: "
+        f"{recommendation.next_gameweek_gain:+.2f}"
+    )
+    print(
+        "Money in bank before: "
+        f"£{recommendation.bank_before:.1f}m"
+    )
+    print(
+        "Money in bank after: "
+        f"£{recommendation.bank_after:.1f}m"
+    )
+    print(
+        f"Reason: {recommendation.reason}"
     )
 
 
@@ -545,6 +620,23 @@ def main() -> None:
 
         print_starting_xi(starting_xi)
         print_bench(bench)
+
+        print()
+        print(
+            "Transfer Department: "
+            "evaluating one-transfer improvements..."
+        )
+
+        transfer_recommendation = (
+            recommend_single_transfer(
+                current_squad=squad,
+                player_pool=projected_players,
+            )
+        )
+
+        print_transfer_recommendation(
+            transfer_recommendation
+        )
 
     except FileNotFoundError as error:
         print(
