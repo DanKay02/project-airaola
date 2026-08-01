@@ -132,3 +132,23 @@ The first release will:
 > The reporting logic now preserves the best rejected plan by net strategic value. This ensures that ROLL and HOLD decisions display the same gross gain, strategic costs, hit cost and net result that were actually used by the decision engine.
 
 > The current version uses manually supplied free-transfer availability and assumes current FPL prices are also selling prices. Persistent squad state, automatic transfer-bank tracking and official purchase-price selling-value calculations remain planned future upgrades.
+
+### v0.1.14: Persistent Season State
+
+> Project Airaola now maintains a persistent manager-state file across runs. The system stores the active 15-player squad, player purchase prices, money in the bank, free-transfer availability, chip availability and transfer-decision history.
+
+> On first setup, Airaola detects an empty state file, generates an optimised initial squad and registers the selected players as the permanent starting team. Future runs reconstruct that saved squad using refreshed FPL data instead of rebuilding a new team from scratch.
+
+> Transfer planning now uses the saved free-transfer bank and current persistent squad. Confirmed ROLL and HOLD decisions update the transfer bank while preserving the squad, and confirmed EXECUTE decisions update the owned players, purchase prices, bank and transfer history.
+
+> Three run modes are now supported:
+>
+> - `python main.py` runs interactively and asks for confirmation before changing manager state.
+> - `python main.py --dry-run` performs a complete analysis without writing any state changes.
+> - `python main.py --auto-apply` applies and saves Airaola's recommendation automatically for unattended scheduled runs.
+
+> State changes are written safely through a temporary file before replacing the active JSON file. This reduces the risk of corrupting manager state during an interrupted save.
+
+> Reconstructed persistent squads now retain purchase-price information while using refreshed prices, projections, fixtures and availability data for weekly analysis.
+
+> This release turns Project Airaola from a fresh weekly optimiser into a continuous season-long manager with memory.

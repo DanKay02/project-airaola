@@ -1,0 +1,75 @@
+{
+  "current_gameweek": 1,
+  "free_transfers": 1,
+  "bank": 0.0,
+  "squad": [
+    {
+      "player_id": 4,
+      "purchase_price": 8.0
+    },
+    {
+      "player_id": 32,
+      "purchase_price": 4.5
+    },
+    {
+      "player_id": 165,
+      "purchase_price": 7.5
+    },
+    {
+      "player_id": 204,
+      "purchase_price": 4.5
+    },
+    {
+      "player_id": 260,
+      "purchase_price": 6.5
+    },
+    {
+      "player_id": 346,
+      "purchase_price": 6.0
+    },
+    {
+      "player_id": 384,
+      "purchase_price": 5.5
+    },
+    {
+      "player_id": 388,
+      "purchase_price": 6.0
+    },
+    {
+      "player_id": 397,
+      "purchase_price": 8.5
+    },
+    {
+      "player_id": 426,
+      "purchase_price": 12.0
+    },
+    {
+      "player_id": 452,
+      "purchase_price": 7.0
+    },
+    {
+      "player_id": 480,
+      "purchase_price": 8.0
+    },
+    {
+      "player_id": 497,
+      "purchase_price": 4.0
+    },
+    {
+      "player_id": 498,
+      "purchase_price": 6.0
+    },
+    {
+      "player_id": 527,
+      "purchase_price": 6.0
+    }
+  ],
+  "chips": {
+    "wildcard_1": true,
+    "wildcard_2": true,
+    "free_hit": true,
+    "bench_boost": true,
+    "triple_captain": true
+  },
+  "transfer_history": []
+}

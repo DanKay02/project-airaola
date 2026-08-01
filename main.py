@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -25,9 +26,23 @@ from airaola.optimisation.transfer_planner import (
     TransferPlan,
     recommend_transfer_strategy,
 )
+from airaola.state.manager_state import (
+    ManagerState,
+    apply_transfer_plan_to_state,
+    build_current_squad,
+    initialise_squad_state,
+    load_manager_state,
+    save_manager_state,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+STATE_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "state"
+    / "manager_state.json"
+)
 
 
 def load_club_identity() -> dict:
@@ -246,7 +261,13 @@ def print_projection_summary(
 def print_optimised_squad(
     squad: pd.DataFrame,
 ) -> None:
-    """Validate and display Airaola's selected squad."""
+    """
+    Validate and display Airaola's current squad.
+
+    Optimiser-specific planning columns are displayed when they
+    are available, but are optional for squads reconstructed from
+    persistent manager state.
+    """
 
     result = validate_squad(squad)
 
@@ -280,11 +301,12 @@ def print_optimised_squad(
         ],
     )
 
-    display_columns = [
+    core_display_columns = [
         "player_name",
         "team_name",
         "position",
         "price",
+        "purchase_price",
         "start_security",
         "minutes_security",
         "fixture_count",
@@ -292,11 +314,23 @@ def print_optimised_squad(
         "expected_minutes",
         "projected_points",
         "projection_value",
+    ]
+
+    optimiser_display_columns = [
         "projected_start_gameweeks",
         "projected_starts",
         "projected_captain_gameweeks",
         "captaincy_appearances",
         "projected_vice_captain_gameweeks",
+    ]
+
+    display_columns = [
+        column
+        for column in (
+            core_display_columns
+            + optimiser_display_columns
+        )
+        if column in ordered_squad.columns
     ]
 
     print(
@@ -332,11 +366,24 @@ def print_optimised_squad(
         f"{total_projected_points:.2f}"
     )
 
+    if "purchase_price" in squad.columns:
+        purchase_cost = float(
+            pd.to_numeric(
+                squad["purchase_price"],
+                errors="coerce",
+            ).sum()
+        )
+
+        print(
+            "Original purchase cost: "
+            f"£{purchase_cost:.1f}m"
+        )
+
     if result.is_valid:
         print("Registration status: APPROVED")
         print(
-            "Optimisation status: "
-            "PROJECTED SQUAD FOUND"
+            "Squad status: "
+            "VALID PERSISTENT SQUAD"
         )
         return
 
@@ -514,10 +561,41 @@ def print_transfer_plan(
             "Projected free transfers next Gameweek: "
             f"{plan.free_transfers_next_gameweek}"
         )
-        print(
-            "Best immediate projected gain: "
-            f"{plan.gross_projected_gain:+.2f}"
-        )
+
+        print()
+        print("Best rejected plan:")
+
+        if plan.best_rejected_transfer_count == 0:
+            print(
+                "No legal transfer plan was available."
+            )
+        else:
+            print(
+                "Transfers considered: "
+                f"{plan.best_rejected_transfer_count}"
+            )
+            print(
+                "Gross five-Gameweek gain: "
+                f"{plan.best_rejected_gross_gain:+.2f}"
+            )
+            print(
+                "Transfer-bank opportunity cost: "
+                f"-{plan.best_rejected_bank_cost:.2f}"
+            )
+            print(
+                "Hit cost: "
+                f"-{plan.best_rejected_hit_cost:.2f}"
+            )
+            print(
+                "Net strategic gain: "
+                f"{plan.best_rejected_net_gain:+.2f}"
+            )
+            print(
+                "Execution threshold: "
+                f"{plan.execution_threshold:+.2f}"
+            )
+
+        print()
         print(
             f"Reason: {plan.reason}"
         )
@@ -604,17 +682,185 @@ def print_transfer_plan(
     )
 
 
+def print_manager_state(
+    state: ManagerState,
+    heading: str = "Persistent Manager State",
+) -> None:
+    """Display Airaola's saved season memory."""
+
+    print()
+    print("=" * 60)
+    print(heading)
+    print("=" * 60)
+    print(
+        f"Current Gameweek: {state.current_gameweek}"
+    )
+    print(
+        "Saved squad players: "
+        f"{len(state.squad)}/15"
+    )
+    print(
+        "Free-transfer bank: "
+        f"{state.free_transfers}"
+    )
+    print(
+        f"Money in bank: £{state.bank:.1f}m"
+    )
+    print(
+        "Recorded transfer decisions: "
+        f"{len(state.transfer_history)}"
+    )
+
+
+def print_first_run_registration() -> None:
+    """Explain the first persistent-state registration."""
+
+    print()
+    print("=" * 60)
+    print("Season State Registration")
+    print("=" * 60)
+    print(
+        "No saved squad was found."
+    )
+    print(
+        "Airaola has prepared an optimised "
+        "15-player initial squad."
+    )
+    print(
+        "The squad will only be stored after "
+        "the state change is approved."
+    )
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parse Project Airaola's command-line run mode."""
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run Project Airaola's weekly FPL "
+            "management cycle."
+        )
+    )
+
+    mode_group = parser.add_mutually_exclusive_group()
+
+    mode_group.add_argument(
+        "--auto-apply",
+        action="store_true",
+        help=(
+            "Apply and save Airaola's recommendation "
+            "without requesting confirmation."
+        ),
+    )
+
+    mode_group.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Analyse and display recommendations "
+            "without changing manager state."
+        ),
+    )
+
+    return parser.parse_args()
+
+
+def print_run_mode(
+    arguments: argparse.Namespace,
+) -> None:
+    """Display the active state-mutation mode."""
+
+    print("=" * 60)
+
+    if arguments.auto_apply:
+        print("Run mode: AUTO APPLY")
+        print(
+            "Confirmed decisions will be saved "
+            "without an interactive prompt."
+        )
+    elif arguments.dry_run:
+        print("Run mode: DRY RUN")
+        print(
+            "No changes will be written to "
+            "manager_state.json."
+        )
+    else:
+        print("Run mode: INTERACTIVE")
+        print(
+            "State changes require manual confirmation."
+        )
+
+    print("=" * 60)
+    print()
+
+
+def confirm_state_change(
+    arguments: argparse.Namespace,
+    prompt: str,
+) -> bool:
+    """
+    Decide whether a proposed state change may be saved.
+
+    Auto-apply approves automatically. Dry-run always refuses.
+    Interactive mode accepts only y or yes.
+    """
+
+    if arguments.auto_apply:
+        print()
+        print(
+            "Auto-apply enabled: state change approved."
+        )
+        return True
+
+    if arguments.dry_run:
+        print()
+        print(
+            "Dry-run enabled: state change not applied."
+        )
+        return False
+
+    print()
+
+    try:
+        response = input(
+            f"{prompt} [y/N]: "
+        )
+    except EOFError:
+        print(
+            "No interactive input was available. "
+            "State change not applied."
+        )
+        return False
+
+    return response.strip().lower() in {
+        "y",
+        "yes",
+    }
+
+
 def main() -> None:
-    """Run recruitment, projections and matchday selection."""
+    """Run Airaola's persistent weekly management cycle."""
+
+    arguments = parse_arguments()
 
     try:
         identity = load_club_identity()
         print_identity(identity)
+        print_run_mode(arguments)
 
         planning_horizon = int(
             identity["manager"][
                 "planning_horizon_gameweeks"
             ]
+        )
+
+        manager_state = load_manager_state(
+            STATE_PATH
+        )
+
+        print_manager_state(
+            manager_state,
+            heading="Loaded Manager State",
         )
 
         players, bootstrap_data = (
@@ -651,26 +897,87 @@ def main() -> None:
             planning_horizon,
         )
 
-        print()
-        print(
-            "First Team Department: "
-            "optimising projected squad..."
+        if not manager_state.has_squad:
+            print()
+            print(
+                "First Team Department: "
+                "optimising initial persistent squad..."
+            )
+
+            squad = optimise_initial_squad(
+                projected_players
+            )
+
+            print_first_run_registration()
+            print_optimised_squad(squad)
+
+            starting_xi, bench, _, _ = (
+                select_gameweek_team(squad)
+            )
+
+            print_starting_xi(starting_xi)
+            print_bench(bench)
+
+            should_register = confirm_state_change(
+                arguments=arguments,
+                prompt=(
+                    "Register this squad as Airaola's "
+                    "persistent initial squad?"
+                ),
+            )
+
+            if not should_register:
+                print_manager_state(
+                    manager_state,
+                    heading="Unchanged Manager State",
+                )
+
+                print()
+                print(
+                    "Initial squad was not registered. "
+                    "Manager state remains unchanged."
+                )
+                return
+
+            manager_state = initialise_squad_state(
+                state=manager_state,
+                squad=squad,
+            )
+
+            save_manager_state(
+                state=manager_state,
+                state_path=STATE_PATH,
+            )
+
+            print_manager_state(
+                manager_state,
+                heading="Saved Manager State",
+            )
+
+            print()
+            print(
+                "Initial registration complete. "
+                "Transfer planning begins on the "
+                "next run using this saved squad."
+            )
+            print(
+                "Manager state saved successfully: "
+                f"{STATE_PATH}"
+            )
+            return
+
+        squad = build_current_squad(
+            state=manager_state,
+            player_pool=projected_players,
         )
 
-        squad = optimise_initial_squad(
-            projected_players
+        print()
+        print(
+            "Persistent Squad Department: "
+            "reconstructing saved team..."
         )
 
         print_optimised_squad(squad)
-
-        starting_xi, bench, _, _ = (
-            select_gameweek_team(squad)
-        )
-
-        print_starting_xi(starting_xi)
-        print_bench(bench)
-
-        free_transfers_available = 1
 
         print()
         print(
@@ -683,7 +990,7 @@ def main() -> None:
                 current_squad=squad,
                 player_pool=projected_players,
                 free_transfers_available=(
-                    free_transfers_available
+                    manager_state.free_transfers
                 ),
             )
         )
@@ -691,6 +998,71 @@ def main() -> None:
         print_transfer_plan(
             transfer_plan
         )
+
+        should_apply = confirm_state_change(
+            arguments=arguments,
+            prompt=(
+                "Apply this decision to manager state?"
+            ),
+        )
+
+        if should_apply:
+            manager_state = apply_transfer_plan_to_state(
+                state=manager_state,
+                transfer_plan=transfer_plan,
+                player_pool=projected_players,
+            )
+
+            save_manager_state(
+                state=manager_state,
+                state_path=STATE_PATH,
+            )
+
+            final_squad = build_current_squad(
+                state=manager_state,
+                player_pool=projected_players,
+            )
+
+            if transfer_plan.decision == "EXECUTE":
+                print()
+                print(
+                    "Persistent Squad Department: "
+                    "saved squad updated after transfers."
+                )
+
+                print_optimised_squad(
+                    final_squad
+                )
+
+            state_heading = "Updated Manager State"
+            state_message = (
+                "Manager state saved successfully: "
+                f"{STATE_PATH}"
+            )
+        else:
+            final_squad = squad
+            state_heading = "Unchanged Manager State"
+            state_message = (
+                "Decision not applied. Manager state "
+                "was left unchanged."
+            )
+
+        starting_xi, bench, _, _ = (
+            select_gameweek_team(
+                final_squad
+            )
+        )
+
+        print_starting_xi(starting_xi)
+        print_bench(bench)
+
+        print_manager_state(
+            manager_state,
+            heading=state_heading,
+        )
+
+        print()
+        print(state_message)
 
     except FileNotFoundError as error:
         print(
@@ -709,6 +1081,14 @@ def main() -> None:
             f"Optimisation error: {error}"
         )
         raise SystemExit(1) from error
+
+    except KeyboardInterrupt:
+        print()
+        print(
+            "Run cancelled. Manager state was not "
+            "changed after the interruption."
+        )
+        raise SystemExit(130)
 
     except Exception as error:
         print(
