@@ -26,8 +26,13 @@ from airaola.optimisation.transfer_planner import (
     TransferPlan,
     recommend_transfer_strategy,
 )
+from airaola.strategy.chip_strategy import (
+    ChipRecommendation,
+    recommend_chip_strategy,
+)
 from airaola.state.manager_state import (
     ManagerState,
+    apply_chip_recommendation_to_state,
     apply_transfer_plan_to_state,
     build_current_squad,
     initialise_squad_state,
@@ -710,6 +715,138 @@ def print_manager_state(
         "Recorded transfer decisions: "
         f"{len(state.transfer_history)}"
     )
+    print(
+        "Recorded chip decisions: "
+        f"{len(state.chip_history)}"
+    )
+
+    active_period = (
+        "first_half"
+        if state.current_gameweek <= 19
+        else "second_half"
+    )
+
+    active_chips = state.chips[active_period]
+
+    print(
+        "Active chip period: "
+        f"{active_period.replace('_', ' ').title()}"
+    )
+    print(
+        "Available chips: "
+        + ", ".join(
+            chip_name.replace("_", " ").title()
+            for chip_name, available
+            in active_chips.items()
+            if available
+        )
+    )
+
+
+def print_chip_recommendation(
+    recommendation: ChipRecommendation,
+) -> None:
+    """Display Airaola's chip-strategy decision."""
+
+    print()
+    print("=" * 60)
+    print("Chip Strategy Department")
+    print("=" * 60)
+
+    print(
+        "Gameweek: "
+        f"{recommendation.current_gameweek}"
+    )
+    print(
+        "Chip period: "
+        f"{recommendation.chip_period.replace('_', ' ').title()}"
+    )
+
+    print()
+    print("Candidates evaluated:")
+
+    for candidate in recommendation.candidates:
+        availability = (
+            "AVAILABLE"
+            if candidate.available
+            else "UNAVAILABLE"
+        )
+
+        eligibility = (
+            "ELIGIBLE"
+            if candidate.eligible
+            else "INELIGIBLE"
+        )
+
+        print()
+        print(
+            f"{candidate.chip_name}: "
+            f"{availability} | {eligibility}"
+        )
+        print(
+            "Projected gain: "
+            f"{candidate.projected_gain:+.2f}"
+        )
+        print(
+            "Adjusted strategic gain: "
+            f"{candidate.adjusted_gain:+.2f}"
+        )
+        print(
+            "Execution threshold: "
+            f"{candidate.threshold:+.2f}"
+        )
+        print(
+            "Strength: "
+            f"{candidate.recommendation_strength}"
+        )
+        print(
+            f"Reason: {candidate.reason}"
+        )
+
+    print()
+    print("Final chip decision:")
+    print(
+        f"Decision: {recommendation.decision}"
+    )
+    print(
+        "Recommendation strength: "
+        f"{recommendation.recommendation_strength}"
+    )
+    print(
+        "Projected gain: "
+        f"{recommendation.projected_gain:+.2f}"
+    )
+    print(
+        "Adjusted gain: "
+        f"{recommendation.adjusted_gain:+.2f}"
+    )
+
+    if recommendation.decision != "NO CHIP":
+        print(
+            "Execution threshold: "
+            f"{recommendation.execution_threshold:+.2f}"
+        )
+
+    if recommendation.captain_name is not None:
+        print(
+            "Captain considered: "
+            f"{recommendation.captain_name} "
+            f"({recommendation.captain_projected_points:.2f})"
+        )
+
+    print(
+        "Bench projected points: "
+        f"{recommendation.bench_projected_points:.2f}"
+    )
+    print(
+        "Bench players: "
+        + ", ".join(
+            recommendation.bench_players
+        )
+    )
+    print(
+        f"Reason: {recommendation.reason}"
+    )
 
 
 def print_first_run_registration() -> None:
@@ -1002,7 +1139,7 @@ def main() -> None:
         should_apply = confirm_state_change(
             arguments=arguments,
             prompt=(
-                "Apply this decision to manager state?"
+                "Apply this transfer decision to manager state?"
             ),
         )
 
@@ -1034,17 +1171,13 @@ def main() -> None:
                     final_squad
                 )
 
-            state_heading = "Updated Manager State"
-            state_message = (
-                "Manager state saved successfully: "
-                f"{STATE_PATH}"
+            transfer_state_message = (
+                "Transfer decision saved successfully."
             )
         else:
             final_squad = squad
-            state_heading = "Unchanged Manager State"
-            state_message = (
-                "Decision not applied. Manager state "
-                "was left unchanged."
+            transfer_state_message = (
+                "Transfer decision not applied."
             )
 
         starting_xi, bench, _, _ = (
@@ -1056,13 +1189,82 @@ def main() -> None:
         print_starting_xi(starting_xi)
         print_bench(bench)
 
+        print()
+        print(
+            "Chip Strategy Department: "
+            "evaluating available scoring chips..."
+        )
+
+        chip_recommendation = recommend_chip_strategy(
+            starting_xi=starting_xi,
+            bench=bench,
+            current_gameweek=(
+                manager_state.current_gameweek
+            ),
+            chips=manager_state.chips,
+        )
+
+        print_chip_recommendation(
+            chip_recommendation
+        )
+
+        should_apply_chip = confirm_state_change(
+            arguments=arguments,
+            prompt=(
+                "Apply this chip decision to manager state?"
+            ),
+        )
+
+        if should_apply_chip:
+            manager_state = (
+                apply_chip_recommendation_to_state(
+                    state=manager_state,
+                    chip_recommendation=(
+                        chip_recommendation
+                    ),
+                )
+            )
+
+            save_manager_state(
+                state=manager_state,
+                state_path=STATE_PATH,
+            )
+
+            chip_state_message = (
+                "Chip decision saved successfully."
+            )
+        else:
+            chip_state_message = (
+                "Chip decision not applied."
+            )
+
+        state_changed = (
+            should_apply
+            or should_apply_chip
+        )
+
         print_manager_state(
             manager_state,
-            heading=state_heading,
+            heading=(
+                "Updated Manager State"
+                if state_changed
+                else "Unchanged Manager State"
+            ),
         )
 
         print()
-        print(state_message)
+        print(transfer_state_message)
+        print(chip_state_message)
+
+        if state_changed:
+            print(
+                "Manager state saved successfully: "
+                f"{STATE_PATH}"
+            )
+        else:
+            print(
+                "Manager state was left unchanged."
+            )
 
     except FileNotFoundError as error:
         print(

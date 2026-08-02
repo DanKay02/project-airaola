@@ -152,3 +152,52 @@ The first release will:
 > Reconstructed persistent squads now retain purchase-price information while using refreshed prices, projections, fixtures and availability data for weekly analysis.
 
 > This release turns Project Airaola from a fresh weekly optimiser into a continuous season-long manager with memory.
+
+### v0.1.15: Chip Strategy Engine
+
+> Project Airaola now includes its first dedicated chip-strategy engine.
+
+> The system evaluates the active half-season chip period and reads chip availability from persistent manager state. Chip data is now stored separately for the first and second halves of the season, allowing Airaola to track each available Wildcard, Free Hit, Bench Boost and Triple Captain independently.
+
+> This release introduces live evaluation for:
+>
+> - `NO CHIP`
+> - `TRIPLE CAPTAIN`
+> - `BENCH BOOST`
+
+> Triple Captain value is calculated from the selected captain's next-Gameweek projected points, minutes security and proximity to first-half chip expiry.
+
+> Bench Boost value is calculated from the combined projected points of all four substitutes. The engine also checks minutes security across the complete bench and requires the substitute goalkeeper to meet the minimum reliability threshold.
+
+> Each chip candidate now reports:
+>
+> - availability
+> - eligibility
+> - projected gain
+> - adjusted strategic gain
+> - execution threshold
+> - recommendation strength
+> - a written reason for the decision
+
+> When no candidate clears its execution threshold, Airaola recommends `NO CHIP` and identifies the strongest rejected chip option.
+
+> Persistent manager state now stores:
+>
+> - nested first-half and second-half chip availability
+> - the last Free Hit Gameweek
+> - confirmed chip decisions
+> - projected and adjusted chip gains
+> - captain and bench context
+> - chip recommendation history
+
+> The state loader remains backwards compatible with the previous flat chip format and automatically migrates old manager-state data into the new nested structure.
+
+> Chip decisions respect all existing run modes:
+>
+> - `python main.py` asks for manual confirmation
+> - `python main.py --dry-run` evaluates chips without changing state
+> - `python main.py --auto-apply` saves the selected chip decision automatically
+
+> Free Hit and Wildcard evaluation are intentionally deferred until temporary and permanent squad re-optimisation are integrated.
+
+> This release gives Project Airaola its first true chip brain, allowing it to preserve chips when ordinary Gameweeks fail to justify their use.

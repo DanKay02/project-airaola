@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,12 +16,35 @@ DEFAULT_BANK = 0.0
 
 EXPECTED_SQUAD_SIZE = 15
 
-DEFAULT_CHIPS = {
-    "wildcard_1": True,
-    "wildcard_2": True,
-    "free_hit": True,
-    "bench_boost": True,
-    "triple_captain": True,
+FIRST_HALF_FINAL_GAMEWEEK = 19
+SECOND_HALF_START_GAMEWEEK = 20
+
+CHIP_PERIODS = (
+    "first_half",
+    "second_half",
+)
+
+CHIP_NAMES = (
+    "wildcard",
+    "free_hit",
+    "bench_boost",
+    "triple_captain",
+)
+
+DEFAULT_CHIPS: dict[str, Any] = {
+    "first_half": {
+        "wildcard": True,
+        "free_hit": True,
+        "bench_boost": True,
+        "triple_captain": True,
+    },
+    "second_half": {
+        "wildcard": True,
+        "free_hit": True,
+        "bench_boost": True,
+        "triple_captain": True,
+    },
+    "last_free_hit_gameweek": None,
 }
 
 
@@ -44,11 +68,17 @@ class ManagerState:
         default_factory=list
     )
 
-    chips: dict[str, bool] = field(
-        default_factory=lambda: DEFAULT_CHIPS.copy()
+    chips: dict[str, Any] = field(
+        default_factory=lambda: copy.deepcopy(
+            DEFAULT_CHIPS
+        )
     )
 
     transfer_history: list[dict[str, Any]] = field(
+        default_factory=list
+    )
+
+    chip_history: list[dict[str, Any]] = field(
         default_factory=list
     )
 
@@ -63,6 +93,87 @@ def create_blank_state() -> ManagerState:
     """Create a clean first-run manager state."""
 
     return ManagerState()
+
+
+def _active_chip_period(
+    current_gameweek: int,
+) -> str:
+    """Return the active chip period for a Gameweek."""
+
+    if current_gameweek <= FIRST_HALF_FINAL_GAMEWEEK:
+        return "first_half"
+
+    return "second_half"
+
+
+def _normalise_chip_key(
+    chip_name: str,
+) -> str:
+    """Convert display chip names into state keys."""
+
+    return (
+        chip_name.strip()
+        .lower()
+        .replace("-", "_")
+        .replace(" ", "_")
+    )
+
+
+def _validate_chips(
+    chips: dict[str, Any],
+) -> None:
+    """Validate nested chip availability state."""
+
+    if not isinstance(chips, dict):
+        raise ValueError(
+            "Manager-state chips must be an object."
+        )
+
+    for period_name in CHIP_PERIODS:
+        period = chips.get(
+            period_name
+        )
+
+        if not isinstance(period, dict):
+            raise ValueError(
+                "Manager-state chip period must be "
+                f"an object: {period_name}"
+            )
+
+        for chip_name in CHIP_NAMES:
+            if chip_name not in period:
+                raise ValueError(
+                    "Manager-state chip period is missing "
+                    f"{chip_name}: {period_name}"
+                )
+
+            if not isinstance(
+                period[chip_name],
+                bool,
+            ):
+                raise ValueError(
+                    "Manager-state chip availability must "
+                    f"be boolean: {period_name}.{chip_name}"
+                )
+
+    last_free_hit_gameweek = chips.get(
+        "last_free_hit_gameweek"
+    )
+
+    if (
+        last_free_hit_gameweek is not None
+        and (
+            not isinstance(
+                last_free_hit_gameweek,
+                int,
+            )
+            or last_free_hit_gameweek < 1
+        )
+    ):
+        raise ValueError(
+            "last_free_hit_gameweek must be null "
+            "or a positive integer."
+        )
 
 
 def _validate_state(
@@ -121,22 +232,151 @@ def _validate_state(
                 "Manager-state purchase prices must be positive."
             )
 
+    if not isinstance(
+        state.transfer_history,
+        list,
+    ):
+        raise ValueError(
+            "Manager-state transfer_history must be a list."
+        )
+
+    if not isinstance(
+        state.chip_history,
+        list,
+    ):
+        raise ValueError(
+            "Manager-state chip_history must be a list."
+        )
+
+    _validate_chips(
+        state.chips
+    )
+
 
 def _normalise_chips(
     chips: dict[str, Any] | None,
-) -> dict[str, bool]:
-    """Merge stored chip state with expected defaults."""
+) -> dict[str, Any]:
+    """
+    Convert stored chip data into the nested v0.1.15 format.
 
-    normalised = DEFAULT_CHIPS.copy()
+    Both the new structure and the previous flat structure are
+    accepted so existing manager-state files can be migrated.
+    """
+
+    normalised = copy.deepcopy(
+        DEFAULT_CHIPS
+    )
 
     if not chips:
         return normalised
 
-    for chip_name in normalised:
-        if chip_name in chips:
-            normalised[chip_name] = bool(
-                chips[chip_name]
+    if not isinstance(chips, dict):
+        raise ValueError(
+            "Manager-state chips must be an object."
+        )
+
+    has_nested_periods = any(
+        period_name in chips
+        for period_name in CHIP_PERIODS
+    )
+
+    if has_nested_periods:
+        for period_name in CHIP_PERIODS:
+            stored_period = chips.get(
+                period_name
             )
+
+            if stored_period is None:
+                continue
+
+            if not isinstance(
+                stored_period,
+                dict,
+            ):
+                raise ValueError(
+                    "Stored chip period must be an object: "
+                    f"{period_name}"
+                )
+
+            for chip_name in CHIP_NAMES:
+                if chip_name in stored_period:
+                    normalised[
+                        period_name
+                    ][chip_name] = bool(
+                        stored_period[
+                            chip_name
+                        ]
+                    )
+
+        last_free_hit_gameweek = chips.get(
+            "last_free_hit_gameweek"
+        )
+
+        if last_free_hit_gameweek is not None:
+            normalised[
+                "last_free_hit_gameweek"
+            ] = int(
+                last_free_hit_gameweek
+            )
+
+        _validate_chips(
+            normalised
+        )
+
+        return normalised
+
+    legacy_wildcard_1 = bool(
+        chips.get(
+            "wildcard_1",
+            True,
+        )
+    )
+
+    legacy_wildcard_2 = bool(
+        chips.get(
+            "wildcard_2",
+            True,
+        )
+    )
+
+    legacy_free_hit = bool(
+        chips.get(
+            "free_hit",
+            True,
+        )
+    )
+
+    legacy_bench_boost = bool(
+        chips.get(
+            "bench_boost",
+            True,
+        )
+    )
+
+    legacy_triple_captain = bool(
+        chips.get(
+            "triple_captain",
+            True,
+        )
+    )
+
+    normalised["first_half"] = {
+        "wildcard": legacy_wildcard_1,
+        "free_hit": legacy_free_hit,
+        "bench_boost": legacy_bench_boost,
+        "triple_captain": legacy_triple_captain,
+    }
+
+    normalised["second_half"] = {
+        "wildcard": legacy_wildcard_2,
+        "free_hit": True,
+        "bench_boost": True,
+        "triple_captain": True,
+    }
+
+    _validate_chips(
+        normalised
+    )
 
     return normalised
 
@@ -190,6 +430,20 @@ def _state_from_dict(
             "must be a list."
         )
 
+    chip_history = raw_state.get(
+        "chip_history",
+        [],
+    )
+
+    if not isinstance(
+        chip_history,
+        list,
+    ):
+        raise ValueError(
+            "Manager-state chip_history "
+            "must be a list."
+        )
+
     state = ManagerState(
         current_gameweek=int(
             raw_state.get(
@@ -214,6 +468,7 @@ def _state_from_dict(
             raw_state.get("chips")
         ),
         transfer_history=transfer_history,
+        chip_history=chip_history,
     )
 
     _validate_state(state)
@@ -253,13 +508,14 @@ def _state_to_dict(
             }
             for player in state.squad
         ],
-        "chips": {
-            chip_name: bool(available)
-            for chip_name, available
-            in state.chips.items()
-        },
-        "transfer_history": list(
+        "chips": copy.deepcopy(
+            state.chips
+        ),
+        "transfer_history": copy.deepcopy(
             state.transfer_history
+        ),
+        "chip_history": copy.deepcopy(
+            state.chip_history
         ),
     }
 
@@ -724,6 +980,174 @@ def apply_transfer_plan_to_state(
             transfer_plan=transfer_plan,
             moves=history_moves,
         )
+    )
+
+    _validate_state(state)
+
+    return state
+
+
+def chip_is_available(
+    state: ManagerState,
+    chip_name: str,
+    chip_period: str | None = None,
+) -> bool:
+    """Return whether a chip is available in a period."""
+
+    normalised_name = _normalise_chip_key(
+        chip_name
+    )
+
+    if normalised_name not in CHIP_NAMES:
+        raise ValueError(
+            "Unknown chip name: "
+            f"{chip_name}"
+        )
+
+    selected_period = (
+        chip_period
+        if chip_period is not None
+        else _active_chip_period(
+            state.current_gameweek
+        )
+    )
+
+    if selected_period not in CHIP_PERIODS:
+        raise ValueError(
+            "Unknown chip period: "
+            f"{selected_period}"
+        )
+
+    return bool(
+        state.chips[
+            selected_period
+        ][normalised_name]
+    )
+
+
+def apply_chip_recommendation_to_state(
+    state: ManagerState,
+    chip_recommendation: Any,
+) -> ManagerState:
+    """
+    Apply a confirmed chip recommendation to manager state.
+
+    NO CHIP creates a history record without consuming a chip.
+    A selected chip is marked unavailable in the active period.
+    """
+
+    decision = str(
+        chip_recommendation.decision
+    ).strip().upper()
+
+    chip_period = str(
+        chip_recommendation.chip_period
+    )
+
+    if chip_period not in CHIP_PERIODS:
+        raise ValueError(
+            "Unknown chip period in recommendation: "
+            f"{chip_period}"
+        )
+
+    if decision == "NO CHIP":
+        state.chip_history.append(
+            {
+                "gameweek": int(
+                    state.current_gameweek
+                ),
+                "period": chip_period,
+                "decision": decision,
+                "projected_gain": float(
+                    chip_recommendation.projected_gain
+                ),
+                "adjusted_gain": float(
+                    chip_recommendation.adjusted_gain
+                ),
+                "recommendation_strength": str(
+                    chip_recommendation
+                    .recommendation_strength
+                ),
+                "reason": str(
+                    chip_recommendation.reason
+                ),
+            }
+        )
+
+        _validate_state(state)
+
+        return state
+
+    normalised_chip = _normalise_chip_key(
+        decision
+    )
+
+    if normalised_chip not in CHIP_NAMES:
+        raise ValueError(
+            "Unknown chip recommendation: "
+            f"{decision}"
+        )
+
+    if not state.chips[
+        chip_period
+    ][normalised_chip]:
+        raise ValueError(
+            "Recommended chip is already unavailable: "
+            f"{chip_period}.{normalised_chip}"
+        )
+
+    state.chips[
+        chip_period
+    ][normalised_chip] = False
+
+    if normalised_chip == "free_hit":
+        state.chips[
+            "last_free_hit_gameweek"
+        ] = int(
+            state.current_gameweek
+        )
+
+    state.chip_history.append(
+        {
+            "gameweek": int(
+                state.current_gameweek
+            ),
+            "period": chip_period,
+            "decision": decision,
+            "chip_key": normalised_chip,
+            "projected_gain": float(
+                chip_recommendation.projected_gain
+            ),
+            "adjusted_gain": float(
+                chip_recommendation.adjusted_gain
+            ),
+            "execution_threshold": float(
+                chip_recommendation.execution_threshold
+            ),
+            "recommendation_strength": str(
+                chip_recommendation
+                .recommendation_strength
+            ),
+            "captain_name": (
+                str(
+                    chip_recommendation.captain_name
+                )
+                if chip_recommendation.captain_name
+                is not None
+                else None
+            ),
+            "captain_projected_points": float(
+                chip_recommendation
+                .captain_projected_points
+            ),
+            "bench_projected_points": float(
+                chip_recommendation
+                .bench_projected_points
+            ),
+            "reason": str(
+                chip_recommendation.reason
+            ),
+        }
     )
 
     _validate_state(state)

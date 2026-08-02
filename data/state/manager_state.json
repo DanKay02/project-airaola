@@ -65,11 +65,19 @@
     }
   ],
   "chips": {
-    "wildcard_1": true,
-    "wildcard_2": true,
+  "first_half": {
+    "wildcard": true,
     "free_hit": true,
     "bench_boost": true,
     "triple_captain": true
   },
+  "second_half": {
+    "wildcard": true,
+    "free_hit": true,
+    "bench_boost": true,
+    "triple_captain": true
+  },
+  "last_free_hit_gameweek": null
+},
   "transfer_history": []
 }

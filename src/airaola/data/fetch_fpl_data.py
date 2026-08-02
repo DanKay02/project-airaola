@@ -23,7 +23,7 @@ def fetch_bootstrap_data() -> dict[str, Any]:
         FPL_BOOTSTRAP_URL,
         timeout=30,
         headers={
-            "User-Agent": "Project-Airaola/0.1.14",
+            "User-Agent": "Project-Airaola/0.1.15",
             "Accept": "application/json",
         },
     )
