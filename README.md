@@ -267,3 +267,32 @@ The first release will:
 > The transfer planner remains responsible for calculating the next Gameweek’s free-transfer total, preventing the lifecycle engine from rolling transfers twice.
 
 > Airaola can now remember not only what it decided, but when the decision belonged.
+
+### v0.1.19 | Deadline Intelligence
+
+> Airaola can now compare its persistent manager state against the official FPL season clock.
+
+> The deadline engine reads the official event data from the FPL bootstrap response and determines:
+
+> - the previous official Gameweek
+> - the current official Gameweek
+> - the next official Gameweek
+> - the active Gameweek Airaola should be managing
+> - the next deadline in UK local time
+> - the number of hours remaining before the deadline
+> - whether analysis is early, on time or late
+> - whether the saved state is aligned, behind or ahead
+> - whether the season has not started or has already finished
+
+> The system never advances the saved state automatically.
+
+> Instead, it blocks unsafe weekly processing and provides a recommended action when:
+
+> - one Gameweek advancement is required
+> - multiple Gameweeks have been missed
+> - the saved state is ahead of official data
+> - the season has finished
+
+> During preseason, Airaola permits squad planning while clearly stating that no Gameweek advancement is required.
+
+> Deadline Intelligence now acts as the gatekeeper between official FPL time and Airaola’s persistent season memory.

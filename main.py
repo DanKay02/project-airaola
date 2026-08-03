@@ -9,6 +9,15 @@ from airaola.finance.price_engine import (
     SquadValueResult,
     calculate_squad_value,
 )
+from airaola.data.deadline_intelligence import (
+    ADVANCEMENT_REQUIRED,
+    MULTIPLE_ADVANCEMENTS_REQUIRED,
+    SEASON_COMPLETE,
+    SEASON_NOT_STARTED,
+    STATE_AHEAD,
+    DeadlineIntelligence,
+    analyse_deadline_intelligence,
+)
 from airaola.data.fetch_fpl_data import (
     run_recruitment_pipeline,
 )
@@ -110,6 +119,128 @@ def print_identity(identity: dict) -> None:
         "Gameweeks"
     )
     print()
+
+
+
+def _format_gameweek(
+    gameweek: int | None,
+) -> str:
+    """Format an optional Gameweek value for console output."""
+
+    if gameweek is None:
+        return "none"
+
+    return str(
+        gameweek
+    )
+
+
+def print_deadline_intelligence(
+    intelligence: DeadlineIntelligence,
+) -> None:
+    """Display Airaola's official FPL season-clock assessment."""
+
+    print()
+    print("=" * 60)
+    print("Deadline Intelligence")
+    print("=" * 60)
+
+    print(
+        "Checked at: "
+        f"{intelligence.checked_at_local:%Y-%m-%d %H:%M %Z}"
+    )
+    print(
+        "Saved Gameweek: "
+        f"{intelligence.saved_gameweek}"
+    )
+    print(
+        "Official previous Gameweek: "
+        + _format_gameweek(
+            intelligence.official_previous_gameweek
+        )
+    )
+    print(
+        "Official current Gameweek: "
+        + _format_gameweek(
+            intelligence.official_current_gameweek
+        )
+    )
+    print(
+        "Official next Gameweek: "
+        + _format_gameweek(
+            intelligence.official_next_gameweek
+        )
+    )
+    print(
+        "Resolved active Gameweek: "
+        + _format_gameweek(
+            intelligence.active_gameweek
+        )
+    )
+
+    print()
+    print(
+        "Season-clock status: "
+        f"{intelligence.state_status}"
+    )
+    print(
+        "Deadline window: "
+        f"{intelligence.deadline_window}"
+    )
+
+    if (
+        intelligence.next_deadline_gameweek is not None
+        and intelligence.next_deadline_local is not None
+    ):
+        print(
+            "Next deadline: "
+            f"Gameweek {intelligence.next_deadline_gameweek}, "
+            f"{intelligence.next_deadline_local:%Y-%m-%d %H:%M %Z}"
+        )
+
+    if intelligence.hours_until_deadline is not None:
+        print(
+            "Hours until deadline: "
+            f"{intelligence.hours_until_deadline:.2f}"
+        )
+
+    if intelligence.advancement_count > 0:
+        print(
+            "Required advancement steps: "
+            f"{intelligence.advancement_count}"
+        )
+        print(
+            "Advancement target: "
+            + _format_gameweek(
+                intelligence.advancement_target
+            )
+        )
+        print(
+            "Single-step advancement safe: "
+            + (
+                "YES"
+                if intelligence.safe_to_advance
+                else "NO"
+            )
+        )
+
+    print()
+    print(
+        f"Recommendation: {intelligence.recommendation}"
+    )
+
+
+def deadline_blocks_weekly_cycle(
+    intelligence: DeadlineIntelligence,
+) -> bool:
+    """Return whether official season timing should stop analysis."""
+
+    return intelligence.state_status in {
+        STATE_AHEAD,
+        ADVANCEMENT_REQUIRED,
+        MULTIPLE_ADVANCEMENTS_REQUIRED,
+        SEASON_COMPLETE,
+    }
 
 
 def print_recruitment_summary(
@@ -1344,6 +1475,82 @@ def main() -> None:
             heading="Loaded Manager State",
         )
 
+        players, bootstrap_data = (
+            run_recruitment_pipeline()
+        )
+
+        print_recruitment_summary(players)
+
+        deadline_intelligence = (
+            analyse_deadline_intelligence(
+                bootstrap_data=bootstrap_data,
+                saved_gameweek=(
+                    manager_state.current_gameweek
+                ),
+            )
+        )
+
+        print_deadline_intelligence(
+            deadline_intelligence
+        )
+
+        if deadline_blocks_weekly_cycle(
+            deadline_intelligence
+        ):
+            print()
+            print(
+                "Deadline safety lock: weekly optimisation "
+                "has been stopped before any state mutation."
+            )
+
+            if (
+                deadline_intelligence.state_status
+                == ADVANCEMENT_REQUIRED
+            ):
+                print(
+                    "Complete the saved Gameweek lifecycle, "
+                    "then run `python main.py "
+                    "--advance-gameweek`."
+                )
+            elif (
+                deadline_intelligence.state_status
+                == MULTIPLE_ADVANCEMENTS_REQUIRED
+            ):
+                print(
+                    "The saved state is several Gameweeks "
+                    "behind. Advance one completed lifecycle "
+                    "at a time and review the state after "
+                    "each step."
+                )
+            elif (
+                deadline_intelligence.state_status
+                == STATE_AHEAD
+            ):
+                print(
+                    "Do not advance again. Wait for official "
+                    "FPL event data to catch up."
+                )
+            elif (
+                deadline_intelligence.state_status
+                == SEASON_COMPLETE
+            ):
+                print(
+                    "The official season is complete. "
+                    "No further weekly cycle is available."
+                )
+
+            return
+
+        if (
+            deadline_intelligence.state_status
+            == SEASON_NOT_STARTED
+        ):
+            print()
+            print(
+                "Preseason mode: squad planning may continue. "
+                "No Gameweek advancement is required."
+            )
+
         if gameweek_is_processed(
             manager_state,
             manager_state.current_gameweek,
@@ -1354,16 +1561,14 @@ def main() -> None:
                 "been fully processed."
             )
             print(
-                "Run `python main.py --advance-gameweek` "
-                "before starting another weekly cycle."
+                "Official timing is aligned, but the saved "
+                "cycle must be advanced before another "
+                "weekly analysis can begin."
+            )
+            print(
+                "Run `python main.py --advance-gameweek`."
             )
             return
-
-        players, bootstrap_data = (
-            run_recruitment_pipeline()
-        )
-
-        print_recruitment_summary(players)
 
         fixture_rows, gameweek_map = (
             run_fixture_pipeline(
