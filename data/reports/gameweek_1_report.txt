@@ -1,0 +1,77 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 1 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 1, 2026-08-21 18:30 BST
+Hours remaining: 430.16
+Analysis window: EARLY
+Season-clock status: SEASON NOT STARTED
+
+FINANCE
+Squad purchase value: £100.0m
+Current market value: £100.0m
+Official selling value: £100.0m
+Money in bank: £0.0m
+Available budget: £100.0m
+
+TRANSFER DECISION
+Decision: ROLL
+Recommendation strength: HOLD
+Gross projected gain: -0.27
+Net strategic gain: -1.02
+Hit cost: 0.00
+Reason: The best immediate plan produces -1.02 net strategic points, below the +1.50 execution threshold. Airaola therefore preserves the transfer and increases the bank.
+
+MANUAL TRANSFER ACTIONS
+- Roll the free transfer.
+- Expected free transfers next Gameweek: 2
+
+STARTING XI
+Formation: 3-5-2
+- GKP: Gianluigi Donnarumma (Man City) | 2.45 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) [C] | 4.48 pts
+- DEF: Marc Guéhi (Man City) | 3.03 pts
+- DEF: Marcos Senesi Barón (Spurs) | 2.42 pts
+- MID: Bruno Borges Fernandes (Man Utd) [VC] | 4.21 pts
+- MID: Morgan Gibbs-White (Nott'm Forest) | 3.50 pts
+- MID: Antoine Semenyo (Man City) | 3.37 pts
+- MID: Bruno Guimarães Rodriguez Moura (Newcastle) | 2.97 pts
+- MID: Harry Wilson (Leeds) | 2.57 pts
+- FWD: João Pedro Junqueira de Jesus (Chelsea) | 3.10 pts
+- FWD: Richarlison de Andrade (Spurs) | 2.56 pts
+
+Captain: Gabriel dos Santos Magalhães (4.48 pts)
+Vice-captain: Bruno Borges Fernandes (4.21 pts)
+Projected XI points before captaincy: 34.66
+Projected team total with captaincy: 39.14
+
+BENCH
+- 1. Dominic Calvert-Lewin (Leeds, FWD) | 2.38 pts
+- 2. Tyrick Mitchell (Crystal Palace, DEF) | 1.94 pts
+- 3. Matty Cash (Aston Villa, DEF) | 1.82 pts
+- 4. Martin Dubravka (Spurs, GKP) | 1.52 pts
+Projected bench points: 7.66
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was TRIPLE CAPTAIN at 4.48 adjusted points against a 8.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: OPEN
+Deadline recommendation: The official FPL season has not started. Initial squad planning may continue, but no Gameweek advancement is required.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Gabriel dos Santos Magalhães.
+- Set vice-captain to Bruno Borges Fernandes.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.

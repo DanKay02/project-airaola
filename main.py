@@ -42,6 +42,10 @@ from airaola.optimisation.transfer_planner import (
     TransferPlan,
     recommend_transfer_strategy,
 )
+from airaola.reporting.weekly_report import (
+    build_weekly_report,
+    save_weekly_report,
+)
 from airaola.strategy.chip_strategy import (
     FREE_HIT,
     WILDCARD,
@@ -69,6 +73,12 @@ STATE_PATH = (
     / "data"
     / "state"
     / "manager_state.json"
+)
+
+REPORTS_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "reports"
 )
 
 
@@ -1938,6 +1948,57 @@ def main() -> None:
             should_apply
             or should_apply_chip
         )
+
+        if lifecycle_completed:
+            lifecycle_status = "PROCESSED"
+        elif state_changed:
+            lifecycle_status = "PARTIAL"
+        else:
+            lifecycle_status = "OPEN"
+
+        weekly_report = build_weekly_report(
+            deadline_intelligence=(
+                deadline_intelligence
+            ),
+            squad_value=squad_value,
+            transfer_plan=transfer_plan,
+            starting_xi=starting_xi,
+            bench=bench,
+            chip_recommendation=(
+                chip_recommendation
+            ),
+            lifecycle_status=(
+                lifecycle_status
+            ),
+        )
+
+        saved_report = save_weekly_report(
+            report=weekly_report,
+            reports_path=REPORTS_PATH,
+        )
+
+        print()
+        print("=" * 60)
+        print("Weekly Decision Report")
+        print("=" * 60)
+        print(
+            "Text report: "
+            f"{saved_report.text_path}"
+        )
+        print(
+            "HTML report: "
+            f"{saved_report.html_path}"
+        )
+        print(
+            "Report lifecycle status: "
+            f"{lifecycle_status}"
+        )
+
+        if arguments.dry_run:
+            print(
+                "Dry-run note: report files were saved, "
+                "but manager state was not changed."
+            )
 
         print_manager_state(
             manager_state,

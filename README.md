@@ -296,3 +296,33 @@ The first release will:
 > During preseason, Airaola permits squad planning while clearly stating that no Gameweek advancement is required.
 
 > Deadline Intelligence now acts as the gatekeeper between official FPL time and Airaola’s persistent season memory.
+
+### v0.1.20 | Weekly Decision Reports
+
+> Airaola now converts each completed analysis into a permanent weekly decision report.
+
+> Every report includes:
+
+> - the official Gameweek deadline
+> - deadline-window and season-clock status
+> - squad purchase, market and selling value
+> - money in the bank
+> - transfer recommendation and reasoning
+> - manual transfer instructions
+> - starting XI and formation
+> - captain and vice-captain
+> - projected team total with captaincy
+> - substitute order
+> - chip recommendation and reasoning
+> - manual chip instructions
+> - lifecycle status
+> - a final FPL action checklist
+
+> Reports are generated in both plain-text and HTML formats:
+
+> - `data/reports/gameweek_<number>_report.txt`
+> - `data/reports/gameweek_<number>_report.html`
+
+> Dry-run mode may save report files, but it never changes persistent manager state.
+
+> Weekly reports provide the permanent decision record that will later be used for email delivery.
