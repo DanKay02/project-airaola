@@ -206,9 +206,9 @@ The first release will:
 
 > Airaola now understands that a player’s market price is not always the amount available when selling them.
 
->The finance engine calculates official FPL selling prices using each player’s saved purchase price and current market price. Price drops are absorbed in full, while profits from price rises are shared according to FPL selling-value rules.
+> The finance engine calculates official FPL selling prices using each player’s saved purchase price and current market price. Price drops are absorbed in full, while profits from price rises are shared according to FPL selling-value rules.
 
->Transfer planning now uses:
+> Transfer planning now uses:
 
 > - official selling prices for outgoing players
 > - current market prices for incoming players
@@ -216,6 +216,25 @@ The first release will:
 > - accurate affordability across one-to-five-transfer plans
 > - correct post-transfer bank calculations
 
->A new Finance Department report displays the squad’s original purchase value, current market value, official selling value, usable budget, retained profit and losses caused by price falls.
+> A new Finance Department report displays the squad’s original purchase value, current market value, official selling value, usable budget, retained profit and losses caused by price falls.
 
->The numbers now know the difference between looking rich and being able to spend it.
+> The numbers now know the difference between looking rich and being able to spend it.
+
+### v0.1.17 | Complete Chip Brain
+
+> Airaola can now evaluate all four FPL chips.
+
+> The chip engine now compares:
+
+> - Triple Captain against the selected captain’s projected score
+> - Bench Boost against the full substitute bench projection
+> - Free Hit against an optimised temporary one-Gameweek squad
+> - Wildcard against an optimised permanent squad across the planning horizon
+
+> Free Hit optimisation uses the squad’s official selling value plus money in the bank to construct the strongest legal temporary squad. The persistent squad, purchase prices and bank remain unchanged after the chip is used.
+
+> Wildcard optimisation uses the same available budget to construct a permanent long-term replacement squad. When applied, the new squad becomes the saved team and each incoming player’s current price becomes their new purchase price.
+
+> Both squad-chip evaluations include projected gains, squad cost, bank remaining, secure-player counts, changed-player counts and incoming and outgoing player lists.
+
+> Airaola now asks not only whether a chip can be played, but whether the moment is actually worthy of it.

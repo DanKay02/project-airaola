@@ -9,18 +9,64 @@ import pandas as pd
 NO_CHIP = "NO CHIP"
 TRIPLE_CAPTAIN = "TRIPLE CAPTAIN"
 BENCH_BOOST = "BENCH BOOST"
+FREE_HIT = "FREE HIT"
+WILDCARD = "WILDCARD"
 
 FIRST_HALF_FINAL_GAMEWEEK = 19
 SECOND_HALF_START_GAMEWEEK = 20
 
 MINIMUM_TRIPLE_CAPTAIN_GAIN = 8.0
 MINIMUM_BENCH_BOOST_GAIN = 14.0
+MINIMUM_FREE_HIT_GAIN = 12.0
+MINIMUM_WILDCARD_GAIN = 18.0
 
 EXPIRY_PRESSURE_START_GAMEWEEK = 16
 EXPIRY_PRESSURE_PER_GAMEWEEK = 1.5
 
 MINIMUM_CAPTAIN_MINUTES_SECURITY = 0.85
 MINIMUM_BENCH_PLAYER_SECURITY = 0.70
+
+MINIMUM_FREE_HIT_SECURE_STARTERS = 10
+MINIMUM_WILDCARD_SECURE_PLAYERS = 13
+
+MAXIMUM_RECENT_FREE_HIT_GAP = 3
+
+
+@dataclass(frozen=True)
+class SquadChipEvaluation:
+    """
+    Store the output of a chip-specific squad optimiser.
+
+    The chip strategy does not build temporary or permanent
+    squads itself. It receives a completed comparison from the
+    optimisation layer and decides whether the chip should be
+    used.
+    """
+
+    chip_name: str
+
+    optimisation_succeeded: bool
+
+    current_projected_points: float
+    optimised_projected_points: float
+    projected_gain: float
+
+    current_next_gameweek_points: float
+    optimised_next_gameweek_points: float
+    next_gameweek_gain: float
+
+    current_squad_value: float
+    available_budget: float
+    optimised_squad_cost: float
+    bank_remaining: float
+
+    secure_player_count: int
+    changed_player_count: int
+
+    incoming_players: tuple[str, ...]
+    outgoing_players: tuple[str, ...]
+
+    reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -86,7 +132,7 @@ def _safe_numeric(
 def _normalise_chip_name(
     chip_name: str,
 ) -> str:
-    """Convert state names into a consistent display form."""
+    """Convert state names into a consistent internal form."""
 
     return (
         chip_name.strip()
@@ -113,8 +159,7 @@ def _chip_is_available(
     chip_name: str,
 ) -> bool:
     """
-    Read chip availability from either the new nested state format
-    or the previous flat state format.
+    Read chip availability from nested or legacy state formats.
     """
 
     normalised_name = _normalise_chip_name(
@@ -122,7 +167,7 @@ def _chip_is_available(
     )
 
     period_data = chips.get(
-        chip_period,
+        chip_period
     )
 
     if isinstance(period_data, dict):
@@ -159,6 +204,34 @@ def _chip_is_available(
     )
 
 
+def _last_free_hit_gameweek(
+    chips: dict[str, Any],
+) -> int | None:
+    """Read the most recently recorded Free Hit Gameweek."""
+
+    value = chips.get(
+        "last_free_hit_gameweek"
+    )
+
+    if value is None:
+        return None
+
+    try:
+        parsed_value = int(
+            value
+        )
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+    if parsed_value < 1:
+        return None
+
+    return parsed_value
+
+
 def _expiry_pressure(
     current_gameweek: int,
 ) -> float:
@@ -192,7 +265,10 @@ def _recommendation_strength(
 ) -> str:
     """Classify a chip candidate's strategic value."""
 
-    margin = adjusted_gain - threshold
+    margin = (
+        adjusted_gain
+        - threshold
+    )
 
     if margin >= 8.0:
         return "EXCEPTIONAL"
@@ -209,11 +285,112 @@ def _recommendation_strength(
     return "HOLD"
 
 
+def _validate_squad_chip_evaluation(
+    evaluation: SquadChipEvaluation,
+    expected_chip_name: str,
+) -> None:
+    """Validate one optimisation result supplied to the engine."""
+
+    if not isinstance(
+        evaluation,
+        SquadChipEvaluation,
+    ):
+        raise ValueError(
+            f"{expected_chip_name} evaluation must be a "
+            "SquadChipEvaluation instance."
+        )
+
+    if (
+        _normalise_chip_name(
+            evaluation.chip_name
+        )
+        != _normalise_chip_name(
+            expected_chip_name
+        )
+    ):
+        raise ValueError(
+            f"Expected a {expected_chip_name} evaluation but "
+            f"received {evaluation.chip_name}."
+        )
+
+    numeric_values = {
+        "current_projected_points": (
+            evaluation.current_projected_points
+        ),
+        "optimised_projected_points": (
+            evaluation.optimised_projected_points
+        ),
+        "projected_gain": (
+            evaluation.projected_gain
+        ),
+        "current_next_gameweek_points": (
+            evaluation.current_next_gameweek_points
+        ),
+        "optimised_next_gameweek_points": (
+            evaluation.optimised_next_gameweek_points
+        ),
+        "next_gameweek_gain": (
+            evaluation.next_gameweek_gain
+        ),
+        "current_squad_value": (
+            evaluation.current_squad_value
+        ),
+        "available_budget": (
+            evaluation.available_budget
+        ),
+        "optimised_squad_cost": (
+            evaluation.optimised_squad_cost
+        ),
+        "bank_remaining": (
+            evaluation.bank_remaining
+        ),
+    }
+
+    for field_name, value in numeric_values.items():
+        try:
+            numeric_value = float(
+                value
+            )
+        except (
+            TypeError,
+            ValueError,
+        ) as error:
+            raise ValueError(
+                f"{expected_chip_name} evaluation field "
+                f"{field_name} must be numeric."
+            ) from error
+
+        if field_name in {
+            "current_squad_value",
+            "available_budget",
+            "optimised_squad_cost",
+            "bank_remaining",
+        } and numeric_value < 0:
+            raise ValueError(
+                f"{expected_chip_name} evaluation field "
+                f"{field_name} cannot be negative."
+            )
+
+    if evaluation.secure_player_count < 0:
+        raise ValueError(
+            f"{expected_chip_name} secure player count "
+            "cannot be negative."
+        )
+
+    if evaluation.changed_player_count < 0:
+        raise ValueError(
+            f"{expected_chip_name} changed player count "
+            "cannot be negative."
+        )
+
+
 def _validate_inputs(
     starting_xi: pd.DataFrame,
     bench: pd.DataFrame,
     current_gameweek: int,
     chips: dict[str, Any],
+    free_hit_evaluation: SquadChipEvaluation | None,
+    wildcard_evaluation: SquadChipEvaluation | None,
 ) -> None:
     """Validate the chip engine's required inputs."""
 
@@ -234,7 +411,10 @@ def _validate_inputs(
             "Current Gameweek must be at least 1."
         )
 
-    if not isinstance(chips, dict):
+    if not isinstance(
+        chips,
+        dict,
+    ):
         raise ValueError(
             "Chip availability must be supplied "
             "as a dictionary."
@@ -257,7 +437,9 @@ def _validate_inputs(
         raise ValueError(
             "Starting XI is missing chip columns: "
             + ", ".join(
-                sorted(missing_xi_columns)
+                sorted(
+                    missing_xi_columns
+                )
             )
         )
 
@@ -278,8 +460,22 @@ def _validate_inputs(
         raise ValueError(
             "Bench is missing chip columns: "
             + ", ".join(
-                sorted(missing_bench_columns)
+                sorted(
+                    missing_bench_columns
+                )
             )
+        )
+
+    if free_hit_evaluation is not None:
+        _validate_squad_chip_evaluation(
+            evaluation=free_hit_evaluation,
+            expected_chip_name=FREE_HIT,
+        )
+
+    if wildcard_evaluation is not None:
+        _validate_squad_chip_evaluation(
+            evaluation=wildcard_evaluation,
+            expected_chip_name=WILDCARD,
         )
 
 
@@ -298,7 +494,9 @@ def _evaluate_triple_captain(
     )
 
     captain_rows = starting_xi[
-        starting_xi["is_captain"].astype(bool)
+        starting_xi[
+            "is_captain"
+        ].astype(bool)
     ].copy()
 
     if captain_rows.empty:
@@ -325,7 +523,9 @@ def _evaluate_triple_captain(
     )
 
     minutes_security = float(
-        captain["minutes_security"]
+        captain[
+            "minutes_security"
+        ]
     )
 
     eligible = (
@@ -335,7 +535,9 @@ def _evaluate_triple_captain(
     )
 
     pressure = (
-        _expiry_pressure(current_gameweek)
+        _expiry_pressure(
+            current_gameweek
+        )
         if chip_period == "first_half"
         else 0.0
     )
@@ -422,11 +624,11 @@ def _evaluate_bench_boost(
         "next_gameweek_projected_points",
     )
 
-    evaluated_bench["minutes_security"] = (
-        _safe_numeric(
-            evaluated_bench,
-            "minutes_security",
-        )
+    evaluated_bench[
+        "minutes_security"
+    ] = _safe_numeric(
+        evaluated_bench,
+        "minutes_security",
     )
 
     projected_gain = float(
@@ -437,17 +639,25 @@ def _evaluate_bench_boost(
 
     secure_players = int(
         (
-            evaluated_bench["minutes_security"]
+            evaluated_bench[
+                "minutes_security"
+            ]
             >= MINIMUM_BENCH_PLAYER_SECURITY
         ).sum()
     )
 
     goalkeeper_rows = evaluated_bench[
-        evaluated_bench["position"] == "GKP"
+        evaluated_bench[
+            "position"
+        ]
+        == "GKP"
     ]
 
     goalkeeper_secure = (
-        len(goalkeeper_rows) == 1
+        len(
+            goalkeeper_rows
+        )
+        == 1
         and float(
             goalkeeper_rows.iloc[0][
                 "minutes_security"
@@ -463,7 +673,9 @@ def _evaluate_bench_boost(
     )
 
     pressure = (
-        _expiry_pressure(current_gameweek)
+        _expiry_pressure(
+            current_gameweek
+        )
         if chip_period == "first_half"
         else 0.0
     )
@@ -529,19 +741,320 @@ def _evaluate_bench_boost(
     )
 
 
+def _evaluate_free_hit(
+    current_gameweek: int,
+    chips: dict[str, Any],
+    chip_period: str,
+    evaluation: SquadChipEvaluation | None,
+) -> ChipCandidate:
+    """Evaluate a completed one-Gameweek Free Hit comparison."""
+
+    available = _chip_is_available(
+        chips=chips,
+        chip_period=chip_period,
+        chip_name="free_hit",
+    )
+
+    if evaluation is None:
+        return ChipCandidate(
+            chip_name=FREE_HIT,
+            available=available,
+            eligible=False,
+            projected_gain=0.0,
+            adjusted_gain=0.0,
+            threshold=MINIMUM_FREE_HIT_GAIN,
+            recommendation_strength="HOLD",
+            reason=(
+                "Free Hit optimisation has not yet supplied "
+                "a temporary one-Gameweek squad comparison."
+            ),
+        )
+
+    recent_free_hit = _last_free_hit_gameweek(
+        chips
+    )
+
+    recent_free_hit_block = (
+        recent_free_hit is not None
+        and (
+            current_gameweek
+            - recent_free_hit
+        )
+        <= MAXIMUM_RECENT_FREE_HIT_GAP
+    )
+
+    secure_enough = (
+        evaluation.secure_player_count
+        >= MINIMUM_FREE_HIT_SECURE_STARTERS
+    )
+
+    affordable = (
+        evaluation.optimised_squad_cost
+        <= evaluation.available_budget
+        + 0.0001
+    )
+
+    eligible = (
+        available
+        and evaluation.optimisation_succeeded
+        and secure_enough
+        and affordable
+        and not recent_free_hit_block
+    )
+
+    projected_gain = float(
+        evaluation.next_gameweek_gain
+    )
+
+    pressure = (
+        _expiry_pressure(
+            current_gameweek
+        )
+        if chip_period == "first_half"
+        else 0.0
+    )
+
+    adjusted_gain = (
+        projected_gain
+        + pressure
+    )
+
+    if not available:
+        reason = (
+            "Free Hit is not available in "
+            "the active chip period."
+        )
+    elif not evaluation.optimisation_succeeded:
+        reason = (
+            "The Free Hit optimiser did not produce "
+            "a legal temporary squad."
+        )
+    elif not affordable:
+        reason = (
+            "The proposed Free Hit squad exceeds the "
+            "manager's available squad budget."
+        )
+    elif recent_free_hit_block:
+        reason = (
+            "A recent Free Hit record prevents Airaola "
+            "from treating this as a valid new candidate."
+        )
+    elif not secure_enough:
+        reason = (
+            "The temporary squad contains only "
+            f"{evaluation.secure_player_count} secure "
+            "starters, below Airaola's requirement."
+        )
+    else:
+        reason = (
+            "Free Hit would improve the selected "
+            "one-Gameweek team by "
+            f"{projected_gain:.2f} projected points "
+            "using a temporary legal squad with "
+            f"{evaluation.changed_player_count} changes."
+        )
+
+        if evaluation.reason:
+            reason += (
+                f" {evaluation.reason}"
+            )
+
+        if pressure > 0:
+            reason += (
+                " First-half expiry pressure adds "
+                f"{pressure:.2f} strategic points."
+            )
+
+    return ChipCandidate(
+        chip_name=FREE_HIT,
+        available=available,
+        eligible=eligible,
+        projected_gain=round(
+            projected_gain,
+            2,
+        ),
+        adjusted_gain=round(
+            adjusted_gain,
+            2,
+        ),
+        threshold=MINIMUM_FREE_HIT_GAIN,
+        recommendation_strength=(
+            _recommendation_strength(
+                adjusted_gain=adjusted_gain,
+                threshold=(
+                    MINIMUM_FREE_HIT_GAIN
+                ),
+            )
+            if eligible
+            else "HOLD"
+        ),
+        reason=reason,
+    )
+
+
+def _evaluate_wildcard(
+    current_gameweek: int,
+    chips: dict[str, Any],
+    chip_period: str,
+    evaluation: SquadChipEvaluation | None,
+) -> ChipCandidate:
+    """Evaluate a completed long-horizon Wildcard comparison."""
+
+    available = _chip_is_available(
+        chips=chips,
+        chip_period=chip_period,
+        chip_name="wildcard",
+    )
+
+    if evaluation is None:
+        return ChipCandidate(
+            chip_name=WILDCARD,
+            available=available,
+            eligible=False,
+            projected_gain=0.0,
+            adjusted_gain=0.0,
+            threshold=MINIMUM_WILDCARD_GAIN,
+            recommendation_strength="HOLD",
+            reason=(
+                "Wildcard optimisation has not yet supplied "
+                "a permanent long-horizon squad comparison."
+            ),
+        )
+
+    secure_enough = (
+        evaluation.secure_player_count
+        >= MINIMUM_WILDCARD_SECURE_PLAYERS
+    )
+
+    meaningful_rebuild = (
+        evaluation.changed_player_count
+        >= 4
+    )
+
+    affordable = (
+        evaluation.optimised_squad_cost
+        <= evaluation.available_budget
+        + 0.0001
+    )
+
+    eligible = (
+        available
+        and evaluation.optimisation_succeeded
+        and secure_enough
+        and meaningful_rebuild
+        and affordable
+    )
+
+    projected_gain = float(
+        evaluation.projected_gain
+    )
+
+    pressure = (
+        _expiry_pressure(
+            current_gameweek
+        )
+        if chip_period == "first_half"
+        else 0.0
+    )
+
+    adjusted_gain = (
+        projected_gain
+        + pressure
+    )
+
+    if not available:
+        reason = (
+            "Wildcard is not available in "
+            "the active chip period."
+        )
+    elif not evaluation.optimisation_succeeded:
+        reason = (
+            "The Wildcard optimiser did not produce "
+            "a legal permanent squad."
+        )
+    elif not affordable:
+        reason = (
+            "The proposed Wildcard squad exceeds the "
+            "manager's available squad budget."
+        )
+    elif not meaningful_rebuild:
+        reason = (
+            "The optimiser proposes only "
+            f"{evaluation.changed_player_count} changes. "
+            "That is not a large enough rebuild to justify "
+            "using a Wildcard."
+        )
+    elif not secure_enough:
+        reason = (
+            "The proposed squad contains only "
+            f"{evaluation.secure_player_count} secure "
+            "players, below Airaola's requirement."
+        )
+    else:
+        reason = (
+            "Wildcard would improve the long-horizon "
+            "squad by "
+            f"{projected_gain:.2f} projected points "
+            "through "
+            f"{evaluation.changed_player_count} permanent "
+            "player changes."
+        )
+
+        if evaluation.reason:
+            reason += (
+                f" {evaluation.reason}"
+            )
+
+        if pressure > 0:
+            reason += (
+                " First-half expiry pressure adds "
+                f"{pressure:.2f} strategic points."
+            )
+
+    return ChipCandidate(
+        chip_name=WILDCARD,
+        available=available,
+        eligible=eligible,
+        projected_gain=round(
+            projected_gain,
+            2,
+        ),
+        adjusted_gain=round(
+            adjusted_gain,
+            2,
+        ),
+        threshold=MINIMUM_WILDCARD_GAIN,
+        recommendation_strength=(
+            _recommendation_strength(
+                adjusted_gain=adjusted_gain,
+                threshold=(
+                    MINIMUM_WILDCARD_GAIN
+                ),
+            )
+            if eligible
+            else "HOLD"
+        ),
+        reason=reason,
+    )
+
+
 def recommend_chip_strategy(
     starting_xi: pd.DataFrame,
     bench: pd.DataFrame,
     current_gameweek: int,
     chips: dict[str, Any],
+    free_hit_evaluation: SquadChipEvaluation | None = None,
+    wildcard_evaluation: SquadChipEvaluation | None = None,
 ) -> ChipRecommendation:
     """
-    Evaluate available one-Gameweek scoring chips.
+    Evaluate every supported FPL chip candidate.
 
-    This first v0.1.15 implementation evaluates No Chip,
-    Triple Captain and Bench Boost. Free Hit and Wildcard are
-    intentionally deferred until temporary and permanent squad
-    re-optimisation are integrated.
+    Triple Captain and Bench Boost are calculated directly from
+    the selected Gameweek team.
+
+    Free Hit and Wildcard consume completed squad comparisons
+    supplied by the chip optimisation layer. Until those results
+    are supplied, both candidates remain safely ineligible.
     """
 
     _validate_inputs(
@@ -549,6 +1062,8 @@ def recommend_chip_strategy(
         bench=bench,
         current_gameweek=current_gameweek,
         chips=chips,
+        free_hit_evaluation=free_hit_evaluation,
+        wildcard_evaluation=wildcard_evaluation,
     )
 
     chip_period = _current_chip_period(
@@ -569,9 +1084,25 @@ def recommend_chip_strategy(
         chip_period=chip_period,
     )
 
+    free_hit = _evaluate_free_hit(
+        current_gameweek=current_gameweek,
+        chips=chips,
+        chip_period=chip_period,
+        evaluation=free_hit_evaluation,
+    )
+
+    wildcard = _evaluate_wildcard(
+        current_gameweek=current_gameweek,
+        chips=chips,
+        chip_period=chip_period,
+        evaluation=wildcard_evaluation,
+    )
+
     candidates = (
         triple_captain,
         bench_boost,
+        free_hit,
+        wildcard,
     )
 
     executable_candidates = [
@@ -586,7 +1117,9 @@ def recommend_chip_strategy(
     ]
 
     captain_rows = starting_xi[
-        starting_xi["is_captain"].astype(bool)
+        starting_xi[
+            "is_captain"
+        ].astype(bool)
     ]
 
     if captain_rows.empty:
@@ -596,7 +1129,9 @@ def recommend_chip_strategy(
         captain = captain_rows.iloc[0]
 
         captain_name = str(
-            captain["player_name"]
+            captain[
+                "player_name"
+            ]
         )
 
         captain_projected_points = float(
@@ -606,7 +1141,9 @@ def recommend_chip_strategy(
         )
 
     bench_players = tuple(
-        str(player_name)
+        str(
+            player_name
+        )
         for player_name in bench[
             "player_name"
         ].tolist()

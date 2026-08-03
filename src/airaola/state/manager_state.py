@@ -1025,15 +1025,281 @@ def chip_is_available(
     )
 
 
+def _validate_chip_squad(
+    chip_squad: pd.DataFrame,
+) -> pd.DataFrame:
+    """Validate and normalise a chip optimiser squad."""
+
+    required_columns = {
+        "id",
+        "player_name",
+        "team_name",
+        "position",
+        "price",
+    }
+
+    missing_columns = required_columns.difference(
+        chip_squad.columns
+    )
+
+    if missing_columns:
+        raise ValueError(
+            "Chip squad is missing state columns: "
+            + ", ".join(
+                sorted(
+                    missing_columns
+                )
+            )
+        )
+
+    if len(chip_squad) != EXPECTED_SQUAD_SIZE:
+        raise ValueError(
+            "Chip squad must contain exactly "
+            f"{EXPECTED_SQUAD_SIZE} players."
+        )
+
+    squad = chip_squad.copy()
+
+    squad["id"] = pd.to_numeric(
+        squad["id"],
+        errors="coerce",
+    )
+
+    squad["price"] = pd.to_numeric(
+        squad["price"],
+        errors="coerce",
+    )
+
+    if squad[
+        [
+            "id",
+            "price",
+        ]
+    ].isna().any().any():
+        raise ValueError(
+            "Chip squad contains invalid player IDs or prices."
+        )
+
+    squad["id"] = (
+        squad["id"]
+        .astype(int)
+    )
+
+    squad["price"] = (
+        squad["price"]
+        .astype(float)
+    )
+
+    if (
+        squad["id"]
+        .duplicated()
+        .any()
+    ):
+        raise ValueError(
+            "Chip squad contains duplicate player IDs."
+        )
+
+    if (
+        squad["id"]
+        <= 0
+    ).any():
+        raise ValueError(
+            "Chip squad player IDs must be positive."
+        )
+
+    if (
+        squad["price"]
+        <= 0
+    ).any():
+        raise ValueError(
+            "Chip squad prices must be positive."
+        )
+
+    return squad.reset_index(
+        drop=True
+    )
+
+
+def _chip_squad_history(
+    chip_squad: pd.DataFrame | None,
+    chip_evaluation: Any | None,
+) -> dict[str, Any] | None:
+    """Build a JSON-compatible chip squad summary."""
+
+    if chip_squad is None:
+        return None
+
+    squad = _validate_chip_squad(
+        chip_squad
+    )
+
+    evaluation_data: dict[str, Any] = {}
+
+    if chip_evaluation is not None:
+        evaluation_data = {
+            "optimisation_succeeded": bool(
+                chip_evaluation.optimisation_succeeded
+            ),
+            "current_projected_points": float(
+                chip_evaluation.current_projected_points
+            ),
+            "optimised_projected_points": float(
+                chip_evaluation.optimised_projected_points
+            ),
+            "projected_gain": float(
+                chip_evaluation.projected_gain
+            ),
+            "current_next_gameweek_points": float(
+                chip_evaluation.current_next_gameweek_points
+            ),
+            "optimised_next_gameweek_points": float(
+                chip_evaluation.optimised_next_gameweek_points
+            ),
+            "next_gameweek_gain": float(
+                chip_evaluation.next_gameweek_gain
+            ),
+            "available_budget": float(
+                chip_evaluation.available_budget
+            ),
+            "optimised_squad_cost": float(
+                chip_evaluation.optimised_squad_cost
+            ),
+            "bank_remaining": float(
+                chip_evaluation.bank_remaining
+            ),
+            "secure_player_count": int(
+                chip_evaluation.secure_player_count
+            ),
+            "changed_player_count": int(
+                chip_evaluation.changed_player_count
+            ),
+            "incoming_players": list(
+                chip_evaluation.incoming_players
+            ),
+            "outgoing_players": list(
+                chip_evaluation.outgoing_players
+            ),
+        }
+
+    return {
+        "players": [
+            {
+                "player_id": int(
+                    player["id"]
+                ),
+                "player_name": str(
+                    player["player_name"]
+                ),
+                "team_name": str(
+                    player["team_name"]
+                ),
+                "position": str(
+                    player["position"]
+                ),
+                "price": round(
+                    float(
+                        player["price"]
+                    ),
+                    1,
+                ),
+            }
+            for _, player in squad.iterrows()
+        ],
+        "evaluation": evaluation_data,
+    }
+
+
+def _apply_wildcard_squad(
+    state: ManagerState,
+    wildcard_squad: pd.DataFrame,
+    wildcard_evaluation: Any,
+) -> None:
+    """Permanently replace the saved squad after a Wildcard."""
+
+    if wildcard_evaluation is None:
+        raise ValueError(
+            "Wildcard state application requires its "
+            "SquadChipEvaluation."
+        )
+
+    squad = _validate_chip_squad(
+        wildcard_squad
+    )
+
+    if not bool(
+        wildcard_evaluation.optimisation_succeeded
+    ):
+        raise ValueError(
+            "An unsuccessful Wildcard optimisation "
+            "cannot be applied."
+        )
+
+    squad_cost = round(
+        float(
+            squad["price"].sum()
+        ),
+        1,
+    )
+
+    available_budget = round(
+        float(
+            wildcard_evaluation.available_budget
+        ),
+        1,
+    )
+
+    if squad_cost > (
+        available_budget
+        + 0.0001
+    ):
+        raise ValueError(
+            "Wildcard squad exceeds the available budget."
+        )
+
+    state.squad = [
+        SquadPlayerState(
+            player_id=int(
+                player["id"]
+            ),
+            purchase_price=round(
+                float(
+                    player["price"]
+                ),
+                1,
+            ),
+        )
+        for _, player in squad.iterrows()
+    ]
+
+    state.bank = round(
+        available_budget
+        - squad_cost,
+        1,
+    )
+
+
 def apply_chip_recommendation_to_state(
     state: ManagerState,
     chip_recommendation: Any,
+    chip_squad: pd.DataFrame | None = None,
+    chip_evaluation: Any | None = None,
 ) -> ManagerState:
     """
     Apply a confirmed chip recommendation to manager state.
 
     NO CHIP creates a history record without consuming a chip.
-    A selected chip is marked unavailable in the active period.
+
+    Triple Captain and Bench Boost consume their active-period
+    chip without changing the persistent squad.
+
+    Free Hit records the temporary optimised squad but preserves
+    the persistent squad, purchase prices and bank.
+
+    Wildcard permanently replaces the saved squad. Every selected
+    player's current market price becomes their new purchase price,
+    and the remaining budget becomes the persistent bank.
+
+    Wildcard and Free Hit preserve the saved free-transfer count.
     """
 
     decision = str(
@@ -1074,7 +1340,9 @@ def apply_chip_recommendation_to_state(
             }
         )
 
-        _validate_state(state)
+        _validate_state(
+            state
+        )
 
         return state
 
@@ -1096,6 +1364,77 @@ def apply_chip_recommendation_to_state(
             f"{chip_period}.{normalised_chip}"
         )
 
+    if (
+        normalised_chip == "free_hit"
+        and state.current_gameweek == 1
+    ):
+        raise ValueError(
+            "Free Hit cannot be played in Gameweek 1."
+        )
+
+    if normalised_chip in {
+        "wildcard",
+        "free_hit",
+    }:
+        if chip_squad is None:
+            raise ValueError(
+                f"{decision} state application requires "
+                "the optimised chip squad."
+            )
+
+        if chip_evaluation is None:
+            raise ValueError(
+                f"{decision} state application requires "
+                "the associated SquadChipEvaluation."
+            )
+
+        expected_evaluation_name = (
+            normalised_chip
+        )
+
+        actual_evaluation_name = (
+            _normalise_chip_key(
+                str(
+                    chip_evaluation.chip_name
+                )
+            )
+        )
+
+        if (
+            actual_evaluation_name
+            != expected_evaluation_name
+        ):
+            raise ValueError(
+                f"{decision} received a mismatched "
+                f"{chip_evaluation.chip_name} evaluation."
+            )
+
+        if not bool(
+            chip_evaluation.optimisation_succeeded
+        ):
+            raise ValueError(
+                f"{decision} optimisation did not succeed."
+            )
+
+    chip_squad_record = (
+        _chip_squad_history(
+            chip_squad=chip_squad,
+            chip_evaluation=chip_evaluation,
+        )
+        if normalised_chip in {
+            "wildcard",
+            "free_hit",
+        }
+        else None
+    )
+
+    if normalised_chip == "wildcard":
+        _apply_wildcard_squad(
+            state=state,
+            wildcard_squad=chip_squad,
+            wildcard_evaluation=chip_evaluation,
+        )
+
     state.chips[
         chip_period
     ][normalised_chip] = False
@@ -1107,49 +1446,69 @@ def apply_chip_recommendation_to_state(
             state.current_gameweek
         )
 
+    history_entry = {
+        "gameweek": int(
+            state.current_gameweek
+        ),
+        "period": chip_period,
+        "decision": decision,
+        "chip_key": normalised_chip,
+        "projected_gain": float(
+            chip_recommendation.projected_gain
+        ),
+        "adjusted_gain": float(
+            chip_recommendation.adjusted_gain
+        ),
+        "execution_threshold": float(
+            chip_recommendation.execution_threshold
+        ),
+        "recommendation_strength": str(
+            chip_recommendation
+            .recommendation_strength
+        ),
+        "captain_name": (
+            str(
+                chip_recommendation.captain_name
+            )
+            if chip_recommendation.captain_name
+            is not None
+            else None
+        ),
+        "captain_projected_points": float(
+            chip_recommendation
+            .captain_projected_points
+        ),
+        "bench_projected_points": float(
+            chip_recommendation
+            .bench_projected_points
+        ),
+        "reason": str(
+            chip_recommendation.reason
+        ),
+        "persistent_squad_changed": (
+            normalised_chip
+            == "wildcard"
+        ),
+        "free_transfers_preserved": (
+            normalised_chip
+            in {
+                "wildcard",
+                "free_hit",
+            }
+        ),
+    }
+
+    if chip_squad_record is not None:
+        history_entry[
+            "chip_squad"
+        ] = chip_squad_record
+
     state.chip_history.append(
-        {
-            "gameweek": int(
-                state.current_gameweek
-            ),
-            "period": chip_period,
-            "decision": decision,
-            "chip_key": normalised_chip,
-            "projected_gain": float(
-                chip_recommendation.projected_gain
-            ),
-            "adjusted_gain": float(
-                chip_recommendation.adjusted_gain
-            ),
-            "execution_threshold": float(
-                chip_recommendation.execution_threshold
-            ),
-            "recommendation_strength": str(
-                chip_recommendation
-                .recommendation_strength
-            ),
-            "captain_name": (
-                str(
-                    chip_recommendation.captain_name
-                )
-                if chip_recommendation.captain_name
-                is not None
-                else None
-            ),
-            "captain_projected_points": float(
-                chip_recommendation
-                .captain_projected_points
-            ),
-            "bench_projected_points": float(
-                chip_recommendation
-                .bench_projected_points
-            ),
-            "reason": str(
-                chip_recommendation.reason
-            ),
-        }
+        history_entry
     )
 
-    _validate_state(state)
+    _validate_state(
+        state
+    )
 
     return state

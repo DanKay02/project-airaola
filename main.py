@@ -1,4 +1,5 @@
 import argparse
+import copy
 from pathlib import Path
 
 import pandas as pd
@@ -24,14 +25,19 @@ from airaola.optimisation.lineup_selector import (
     select_gameweek_team,
 )
 from airaola.optimisation.squad_optimiser import (
+    optimise_free_hit_squad,
     optimise_initial_squad,
+    optimise_wildcard_squad,
 )
 from airaola.optimisation.transfer_planner import (
     TransferPlan,
     recommend_transfer_strategy,
 )
 from airaola.strategy.chip_strategy import (
+    FREE_HIT,
+    WILDCARD,
     ChipRecommendation,
+    SquadChipEvaluation,
     recommend_chip_strategy,
 )
 from airaola.state.manager_state import (
@@ -846,6 +852,129 @@ def print_manager_state(
     )
 
 
+def print_chip_squad_evaluation(
+    heading: str,
+    squad: pd.DataFrame,
+    evaluation: SquadChipEvaluation,
+) -> None:
+    """Display one Free Hit or Wildcard squad comparison."""
+
+    print()
+    print("=" * 60)
+    print(heading)
+    print("=" * 60)
+
+    print(
+        "Optimisation status: "
+        + (
+            "SUCCESS"
+            if evaluation.optimisation_succeeded
+            else "FAILED"
+        )
+    )
+    print(
+        "Available budget: "
+        f"£{evaluation.available_budget:.1f}m"
+    )
+    print(
+        "Optimised squad cost: "
+        f"£{evaluation.optimised_squad_cost:.1f}m"
+    )
+    print(
+        "Bank remaining: "
+        f"£{evaluation.bank_remaining:.1f}m"
+    )
+    print(
+        "Secure players: "
+        f"{evaluation.secure_player_count}/15"
+    )
+    print(
+        "Players changed: "
+        f"{evaluation.changed_player_count}"
+    )
+    print(
+        "Long-horizon gain: "
+        f"{evaluation.projected_gain:+.2f}"
+    )
+    print(
+        "Next-Gameweek gain: "
+        f"{evaluation.next_gameweek_gain:+.2f}"
+    )
+
+    print()
+    print(
+        "Players out: "
+        + (
+            ", ".join(
+                evaluation.outgoing_players
+            )
+            if evaluation.outgoing_players
+            else "none"
+        )
+    )
+    print(
+        "Players in: "
+        + (
+            ", ".join(
+                evaluation.incoming_players
+            )
+            if evaluation.incoming_players
+            else "none"
+        )
+    )
+
+    position_order = {
+        "GKP": 1,
+        "DEF": 2,
+        "MID": 3,
+        "FWD": 4,
+    }
+
+    display = squad.copy()
+
+    display["position_order"] = (
+        display["position"]
+        .map(position_order)
+    )
+
+    display = display.sort_values(
+        by=[
+            "position_order",
+            "projected_points",
+        ],
+        ascending=[
+            True,
+            False,
+        ],
+    )
+
+    columns = [
+        column
+        for column in [
+            "player_name",
+            "team_name",
+            "position",
+            "price",
+            "minutes_security",
+            "projected_points",
+            "projected_start_gameweeks",
+            "projected_captain_gameweeks",
+        ]
+        if column in display.columns
+    ]
+
+    print()
+    print("Proposed squad:")
+    print(
+        display[
+            columns
+        ].to_string(
+            index=False,
+            col_space=14,
+        )
+    )
+
+
 def print_chip_recommendation(
     recommendation: ChipRecommendation,
 ) -> None:
@@ -1251,6 +1380,10 @@ def main() -> None:
             transfer_plan
         )
 
+        pre_transfer_state = copy.deepcopy(
+            manager_state
+        )
+
         should_apply = confirm_state_change(
             arguments=arguments,
             prompt=(
@@ -1265,11 +1398,6 @@ def main() -> None:
                 player_pool=projected_players,
             )
 
-            save_manager_state(
-                state=manager_state,
-                state_path=STATE_PATH,
-            )
-
             final_squad = build_current_squad(
                 state=manager_state,
                 player_pool=projected_players,
@@ -1279,7 +1407,7 @@ def main() -> None:
                 print()
                 print(
                     "Persistent Squad Department: "
-                    "saved squad updated after transfers."
+                    "provisional squad after transfers."
                 )
 
                 print_optimised_squad(
@@ -1287,7 +1415,7 @@ def main() -> None:
                 )
 
             transfer_state_message = (
-                "Transfer decision saved successfully."
+                "Transfer decision approved provisionally."
             )
         else:
             final_squad = squad
@@ -1306,17 +1434,72 @@ def main() -> None:
 
         print()
         print(
+            "Chip Optimisation Department: "
+            "building Free Hit and Wildcard squads..."
+        )
+
+        chip_budget = (
+            squad_value.available_budget
+        )
+
+        target_gameweek = int(
+            starting_xi[
+                "next_gameweek"
+            ].iloc[0]
+        )
+
+        free_hit_squad, free_hit_evaluation = (
+            optimise_free_hit_squad(
+                players=projected_players,
+                current_squad=squad,
+                available_budget=chip_budget,
+                target_gameweek=target_gameweek,
+            )
+        )
+
+        wildcard_squad, wildcard_evaluation = (
+            optimise_wildcard_squad(
+                players=projected_players,
+                current_squad=squad,
+                available_budget=chip_budget,
+            )
+        )
+
+        print_chip_squad_evaluation(
+            heading=(
+                "Free Hit Optimisation"
+            ),
+            squad=free_hit_squad,
+            evaluation=free_hit_evaluation,
+        )
+
+        print_chip_squad_evaluation(
+            heading=(
+                "Wildcard Optimisation"
+            ),
+            squad=wildcard_squad,
+            evaluation=wildcard_evaluation,
+        )
+
+        print()
+        print(
             "Chip Strategy Department: "
-            "evaluating available scoring chips..."
+            "evaluating all available chips..."
         )
 
         chip_recommendation = recommend_chip_strategy(
             starting_xi=starting_xi,
             bench=bench,
             current_gameweek=(
-                manager_state.current_gameweek
+                pre_transfer_state.current_gameweek
             ),
-            chips=manager_state.chips,
+            chips=pre_transfer_state.chips,
+            free_hit_evaluation=(
+                free_hit_evaluation
+            ),
+            wildcard_evaluation=(
+                wildcard_evaluation
+            ),
         )
 
         print_chip_recommendation(
@@ -1330,6 +1513,52 @@ def main() -> None:
             ),
         )
 
+        squad_chip_decisions = {
+            FREE_HIT,
+            WILDCARD,
+        }
+
+        selected_chip_squad = None
+        selected_chip_evaluation = None
+
+        if (
+            chip_recommendation.decision
+            == FREE_HIT
+        ):
+            selected_chip_squad = (
+                free_hit_squad
+            )
+            selected_chip_evaluation = (
+                free_hit_evaluation
+            )
+
+        if (
+            chip_recommendation.decision
+            == WILDCARD
+        ):
+            selected_chip_squad = (
+                wildcard_squad
+            )
+            selected_chip_evaluation = (
+                wildcard_evaluation
+            )
+
+        transfer_overridden = (
+            should_apply_chip
+            and chip_recommendation.decision
+            in squad_chip_decisions
+        )
+
+        if transfer_overridden:
+            manager_state = copy.deepcopy(
+                pre_transfer_state
+            )
+
+            transfer_state_message = (
+                "Ordinary transfer decision was superseded "
+                f"by {chip_recommendation.decision}."
+            )
+
         if should_apply_chip:
             manager_state = (
                 apply_chip_recommendation_to_state(
@@ -1337,12 +1566,13 @@ def main() -> None:
                     chip_recommendation=(
                         chip_recommendation
                     ),
+                    chip_squad=(
+                        selected_chip_squad
+                    ),
+                    chip_evaluation=(
+                        selected_chip_evaluation
+                    ),
                 )
-            )
-
-            save_manager_state(
-                state=manager_state,
-                state_path=STATE_PATH,
             )
 
             chip_state_message = (
@@ -1357,6 +1587,12 @@ def main() -> None:
             should_apply
             or should_apply_chip
         )
+
+        if state_changed:
+            save_manager_state(
+                state=manager_state,
+                state_path=STATE_PATH,
+            )
 
         print_manager_state(
             manager_state,
