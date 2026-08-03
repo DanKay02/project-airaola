@@ -326,3 +326,37 @@ The first release will:
 > Dry-run mode may save report files, but it never changes persistent manager state.
 
 > Weekly reports provide the permanent decision record that will later be used for email delivery.
+
+### v0.1.21 | Email Delivery
+
+> Airaola can now deliver each weekly decision report directly by email.
+
+> Email delivery is explicitly enabled with:
+
+> `python main.py --send-email`
+
+> The email includes:
+
+> - the HTML weekly report as the main email body
+> - a plain-text fallback for email clients without HTML support
+> - the saved `.txt` report as an attachment
+> - the saved `.html` report as an attachment
+> - the Gameweek number in the subject line
+
+> SMTP credentials are loaded securely from Windows environment variables:
+
+> - `AIRAOLA_EMAIL_SENDER`
+> - `AIRAOLA_EMAIL_RECIPIENT`
+> - `AIRAOLA_EMAIL_APP_PASSWORD`
+
+> No email credentials or passwords are stored inside the repository.
+
+> Airaola uses authenticated TLS delivery and reports whether the message was sent successfully, rejected or blocked by a configuration error.
+
+> Email delivery remains fully opt-in. A normal run generates the weekly reports without contacting the SMTP server.
+
+> Dry-run mode may still send an email when `--send-email` is explicitly supplied, while preserving the manager state and making no changes to `manager_state.json`.
+
+> Email failures do not delete generated reports, reverse completed analysis or corrupt persistent season memory.
+
+> Weekly reporting is now capable of travelling from Airaola’s analysis engine directly to the manager’s inbox.

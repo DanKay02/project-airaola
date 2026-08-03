@@ -30,6 +30,10 @@ from airaola.models.projections import (
 from airaola.models.squad_rules import (
     validate_squad,
 )
+from airaola.notifications.email_delivery import (
+    load_email_configuration,
+    send_report_email,
+)
 from airaola.optimisation.lineup_selector import (
     select_gameweek_team,
 )
@@ -1304,6 +1308,15 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--send-email",
+        action="store_true",
+        help=(
+            "Send the generated weekly decision report "
+            "using environment-based SMTP configuration."
+        ),
+    )
+
     return parser.parse_args()
 
 
@@ -1998,6 +2011,58 @@ def main() -> None:
             print(
                 "Dry-run note: report files were saved, "
                 "but manager state was not changed."
+            )
+
+        if arguments.send_email:
+            print()
+            print("=" * 60)
+            print("Email Delivery")
+            print("=" * 60)
+
+            try:
+                email_configuration = (
+                    load_email_configuration()
+                )
+            except ValueError as error:
+                print("Delivery status: NOT SENT")
+                print(
+                    "Configuration error: "
+                    f"{error}"
+                )
+            else:
+                delivery_result = send_report_email(
+                    report=saved_report,
+                    configuration=(
+                        email_configuration
+                    ),
+                    attach_files=True,
+                )
+
+                if delivery_result.sent:
+                    print("Delivery status: SENT")
+                    print(
+                        "Recipient: "
+                        f"{delivery_result.recipient_email}"
+                    )
+                    print(
+                        "Subject: "
+                        f"{delivery_result.subject}"
+                    )
+                else:
+                    print("Delivery status: NOT SENT")
+                    print(
+                        "Recipient: "
+                        f"{delivery_result.recipient_email}"
+                    )
+                    print(
+                        "Reason: "
+                        f"{delivery_result.error_message}"
+                    )
+        else:
+            print()
+            print(
+                "Email delivery: skipped. "
+                "Use `--send-email` to send this report."
             )
 
         print_manager_state(
