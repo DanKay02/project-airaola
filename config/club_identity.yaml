@@ -1,7 +1,7 @@
 project:
   name: "Project Airaola"
   tagline: "Data. Decisions. Domination."
-  version: "0.1.17"
+  version: "0.1.18"
 
 manager:
   name: "Airaola"

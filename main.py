@@ -42,11 +42,14 @@ from airaola.strategy.chip_strategy import (
 )
 from airaola.state.manager_state import (
     ManagerState,
+    advance_gameweek,
     apply_chip_recommendation_to_state,
     apply_transfer_plan_to_state,
     build_current_squad,
+    gameweek_is_processed,
     initialise_squad_state,
     load_manager_state,
+    mark_gameweek_processed,
     save_manager_state,
 )
 
@@ -828,6 +831,26 @@ def print_manager_state(
         "Recorded chip decisions: "
         f"{len(state.chip_history)}"
     )
+    print(
+        "Recorded lifecycle events: "
+        f"{len(state.lifecycle_history)}"
+    )
+    print(
+        "Last processed Gameweek: "
+        + (
+            str(state.last_processed_gameweek)
+            if state.last_processed_gameweek is not None
+            else "none"
+        )
+    )
+    print(
+        "Current Gameweek status: "
+        + (
+            "PROCESSED"
+            if state.current_gameweek_processed
+            else "OPEN"
+        )
+    )
 
     active_period = (
         "first_half"
@@ -1131,6 +1154,15 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--advance-gameweek",
+        action="store_true",
+        help=(
+            "Advance one Gameweek after the current "
+            "Gameweek has been fully processed."
+        ),
+    )
+
     return parser.parse_args()
 
 
@@ -1207,6 +1239,80 @@ def confirm_state_change(
     }
 
 
+
+def run_gameweek_advance(
+    arguments: argparse.Namespace,
+) -> None:
+    """Advance the saved season clock by exactly one Gameweek."""
+
+    manager_state = load_manager_state(
+        STATE_PATH
+    )
+
+    print_manager_state(
+        manager_state,
+        heading="Loaded Manager State",
+    )
+
+    current_gameweek = int(
+        manager_state.current_gameweek
+    )
+
+    if not gameweek_is_processed(
+        manager_state,
+        current_gameweek,
+    ):
+        raise ValueError(
+            f"Gameweek {current_gameweek} is still open. "
+            "Complete and save both weekly decisions before "
+            "advancing the season."
+        )
+
+    should_advance = confirm_state_change(
+        arguments=arguments,
+        prompt=(
+            f"Advance Project Airaola from Gameweek "
+            f"{current_gameweek} to Gameweek "
+            f"{current_gameweek + 1}?"
+        ),
+    )
+
+    if not should_advance:
+        print_manager_state(
+            manager_state,
+            heading="Unchanged Manager State",
+        )
+
+        print()
+        print(
+            "Gameweek was not advanced."
+        )
+        return
+
+    manager_state = advance_gameweek(
+        state=manager_state
+    )
+
+    save_manager_state(
+        state=manager_state,
+        state_path=STATE_PATH,
+    )
+
+    print_manager_state(
+        manager_state,
+        heading="Advanced Manager State",
+    )
+
+    print()
+    print(
+        "Gameweek advanced successfully."
+    )
+    print(
+        "Manager state saved successfully: "
+        f"{STATE_PATH}"
+    )
+
+
 def main() -> None:
     """Run Airaola's persistent weekly management cycle."""
 
@@ -1216,6 +1322,12 @@ def main() -> None:
         identity = load_club_identity()
         print_identity(identity)
         print_run_mode(arguments)
+
+        if arguments.advance_gameweek:
+            run_gameweek_advance(
+                arguments
+            )
+            return
 
         planning_horizon = int(
             identity["manager"][
@@ -1231,6 +1343,21 @@ def main() -> None:
             manager_state,
             heading="Loaded Manager State",
         )
+
+        if gameweek_is_processed(
+            manager_state,
+            manager_state.current_gameweek,
+        ):
+            print()
+            print(
+                "Lifecycle lock: this Gameweek has already "
+                "been fully processed."
+            )
+            print(
+                "Run `python main.py --advance-gameweek` "
+                "before starting another weekly cycle."
+            )
+            return
 
         players, bootstrap_data = (
             run_recruitment_pipeline()
@@ -1583,23 +1710,40 @@ def main() -> None:
                 "Chip decision not applied."
             )
 
-        state_changed = (
+        decisions_recorded = (
             should_apply
-            or should_apply_chip
+            and should_apply_chip
         )
 
-        if state_changed:
+        lifecycle_completed = False
+
+        if decisions_recorded:
+            manager_state = mark_gameweek_processed(
+                state=manager_state
+            )
+
+            lifecycle_completed = True
+
             save_manager_state(
                 state=manager_state,
                 state_path=STATE_PATH,
             )
 
+        state_changed = (
+            should_apply
+            or should_apply_chip
+        )
+
         print_manager_state(
             manager_state,
             heading=(
-                "Updated Manager State"
-                if state_changed
-                else "Unchanged Manager State"
+                "Processed Manager State"
+                if lifecycle_completed
+                else (
+                    "Updated Manager State"
+                    if state_changed
+                    else "Unchanged Manager State"
+                )
             ),
         )
 
@@ -1607,10 +1751,26 @@ def main() -> None:
         print(transfer_state_message)
         print(chip_state_message)
 
-        if state_changed:
+        if lifecycle_completed:
+            print(
+                "Gameweek lifecycle marked as processed."
+            )
+            print(
+                "Run `python main.py --advance-gameweek` "
+                "when the next Gameweek is ready."
+            )
             print(
                 "Manager state saved successfully: "
                 f"{STATE_PATH}"
+            )
+        elif state_changed:
+            print(
+                "The weekly lifecycle remains open because "
+                "both decisions were not approved."
+            )
+            print(
+                "Partial state changes were kept in memory "
+                "only and were not written to disk."
             )
         else:
             print(

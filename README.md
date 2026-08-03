@@ -238,3 +238,32 @@ The first release will:
 > Both squad-chip evaluations include projected gains, squad cost, bank remaining, secure-player counts, changed-player counts and incoming and outgoing player lists.
 
 > Airaola now asks not only whether a chip can be played, but whether the moment is actually worthy of it.
+
+### v0.1.18 | Gameweek Lifecycle
+
+> Airaola now understands the passage of time.
+
+> The manager state records whether the current Gameweek is still open or has already been fully processed. Once both the transfer decision and chip decision are approved, the Gameweek is marked as complete and locked against duplicate processing.
+
+> The lifecycle engine now tracks:
+
+> - the current Gameweek
+> - the last processed Gameweek
+> - whether the active Gameweek is open or complete
+> - lifecycle history
+> - first-half chip expiry
+> - the transition into the second-half chip period
+
+> A new `--advance-gameweek` command moves the season forward by exactly one Gameweek after the current one has been completed.
+
+> Gameweek advancement preserves:
+
+> - the persistent squad
+> - purchase prices
+> - money in the bank
+> - the saved free-transfer count
+> - transfer and chip histories
+
+> The transfer planner remains responsible for calculating the next Gameweek’s free-transfer total, preventing the lifecycle engine from rolling transfers twice.
+
+> Airaola can now remember not only what it decided, but when the decision belonged.

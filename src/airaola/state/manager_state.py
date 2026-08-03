@@ -13,6 +13,8 @@ MAX_FREE_TRANSFERS = 5
 DEFAULT_FREE_TRANSFERS = 1
 DEFAULT_GAMEWEEK = 1
 DEFAULT_BANK = 0.0
+DEFAULT_LAST_PROCESSED_GAMEWEEK = None
+MAX_GAMEWEEK = 38
 
 EXPECTED_SQUAD_SIZE = 15
 
@@ -64,6 +66,10 @@ class ManagerState:
     free_transfers: int = DEFAULT_FREE_TRANSFERS
     bank: float = DEFAULT_BANK
 
+    last_processed_gameweek: int | None = (
+        DEFAULT_LAST_PROCESSED_GAMEWEEK
+    )
+
     squad: list[SquadPlayerState] = field(
         default_factory=list
     )
@@ -82,11 +88,24 @@ class ManagerState:
         default_factory=list
     )
 
+    lifecycle_history: list[dict[str, Any]] = field(
+        default_factory=list
+    )
+
     @property
     def has_squad(self) -> bool:
         """Return whether a complete persistent squad exists."""
 
         return len(self.squad) == EXPECTED_SQUAD_SIZE
+
+    @property
+    def current_gameweek_processed(self) -> bool:
+        """Return whether the active Gameweek is finalised."""
+
+        return (
+            self.last_processed_gameweek
+            == self.current_gameweek
+        )
 
 
 def create_blank_state() -> ManagerState:
@@ -181,9 +200,28 @@ def _validate_state(
 ) -> None:
     """Validate persistent manager-state values."""
 
-    if state.current_gameweek < 1:
+    if not (
+        1
+        <= state.current_gameweek
+        <= MAX_GAMEWEEK
+    ):
         raise ValueError(
-            "Manager-state current_gameweek must be at least 1."
+            "Manager-state current_gameweek must be "
+            f"between 1 and {MAX_GAMEWEEK}."
+        )
+
+    if (
+        state.last_processed_gameweek is not None
+        and (
+            state.last_processed_gameweek < 1
+            or state.last_processed_gameweek
+            > state.current_gameweek
+        )
+    ):
+        raise ValueError(
+            "Manager-state last_processed_gameweek must be "
+            "null or a positive Gameweek no later than "
+            "current_gameweek."
         )
 
     if not (
@@ -246,6 +284,14 @@ def _validate_state(
     ):
         raise ValueError(
             "Manager-state chip_history must be a list."
+        )
+
+    if not isinstance(
+        state.lifecycle_history,
+        list,
+    ):
+        raise ValueError(
+            "Manager-state lifecycle_history must be a list."
         )
 
     _validate_chips(
@@ -444,6 +490,31 @@ def _state_from_dict(
             "must be a list."
         )
 
+    lifecycle_history = raw_state.get(
+        "lifecycle_history",
+        [],
+    )
+
+    if not isinstance(
+        lifecycle_history,
+        list,
+    ):
+        raise ValueError(
+            "Manager-state lifecycle_history "
+            "must be a list."
+        )
+
+    raw_last_processed = raw_state.get(
+        "last_processed_gameweek",
+        DEFAULT_LAST_PROCESSED_GAMEWEEK,
+    )
+
+    last_processed_gameweek = (
+        None
+        if raw_last_processed is None
+        else int(raw_last_processed)
+    )
+
     state = ManagerState(
         current_gameweek=int(
             raw_state.get(
@@ -463,12 +534,16 @@ def _state_from_dict(
                 DEFAULT_BANK,
             )
         ),
+        last_processed_gameweek=(
+            last_processed_gameweek
+        ),
         squad=squad,
         chips=_normalise_chips(
             raw_state.get("chips")
         ),
         transfer_history=transfer_history,
         chip_history=chip_history,
+        lifecycle_history=lifecycle_history,
     )
 
     _validate_state(state)
@@ -494,6 +569,12 @@ def _state_to_dict(
             float(state.bank),
             1,
         ),
+        "last_processed_gameweek": (
+            int(state.last_processed_gameweek)
+            if state.last_processed_gameweek
+            is not None
+            else None
+        ),
         "squad": [
             {
                 "player_id": int(
@@ -516,6 +597,9 @@ def _state_to_dict(
         ),
         "chip_history": copy.deepcopy(
             state.chip_history
+        ),
+        "lifecycle_history": copy.deepcopy(
+            state.lifecycle_history
         ),
     }
 
@@ -818,6 +902,17 @@ def apply_transfer_plan_to_state(
     EXECUTE changes the squad. ROLL and HOLD preserve the squad
     but still update the free-transfer bank and decision history.
     """
+
+    if any(
+        int(entry.get("gameweek", -1))
+        == state.current_gameweek
+        for entry in state.transfer_history
+        if isinstance(entry, dict)
+    ):
+        raise ValueError(
+            "A transfer decision has already been recorded "
+            f"for Gameweek {state.current_gameweek}."
+        )
 
     decision = str(
         transfer_plan.decision
@@ -1302,6 +1397,17 @@ def apply_chip_recommendation_to_state(
     Wildcard and Free Hit preserve the saved free-transfer count.
     """
 
+    if any(
+        int(entry.get("gameweek", -1))
+        == state.current_gameweek
+        for entry in state.chip_history
+        if isinstance(entry, dict)
+    ):
+        raise ValueError(
+            "A chip decision has already been recorded "
+            f"for Gameweek {state.current_gameweek}."
+        )
+
     decision = str(
         chip_recommendation.decision
     ).strip().upper()
@@ -1505,6 +1611,248 @@ def apply_chip_recommendation_to_state(
 
     state.chip_history.append(
         history_entry
+    )
+
+    _validate_state(
+        state
+    )
+
+    return state
+
+def gameweek_is_processed(
+    state: ManagerState,
+    gameweek: int | None = None,
+) -> bool:
+    """Return whether a Gameweek has been finalised."""
+
+    selected_gameweek = (
+        state.current_gameweek
+        if gameweek is None
+        else int(gameweek)
+    )
+
+    return (
+        state.last_processed_gameweek is not None
+        and state.last_processed_gameweek
+        >= selected_gameweek
+    )
+
+
+def _recorded_decision_for_gameweek(
+    history: list[dict[str, Any]],
+    gameweek: int,
+) -> bool:
+    """Return whether a decision history covers a Gameweek."""
+
+    return any(
+        isinstance(entry, dict)
+        and int(
+            entry.get(
+                "gameweek",
+                -1,
+            )
+        )
+        == gameweek
+        for entry in history
+    )
+
+
+def mark_gameweek_processed(
+    state: ManagerState,
+) -> ManagerState:
+    """
+    Finalise the active Gameweek exactly once.
+
+    Both a transfer decision and a chip decision must already be
+    recorded. This ensures a weekly run cannot be marked complete
+    while half of Airaola's decision cycle is missing.
+    """
+
+    gameweek = int(
+        state.current_gameweek
+    )
+
+    if gameweek_is_processed(
+        state,
+        gameweek,
+    ):
+        raise ValueError(
+            f"Gameweek {gameweek} has already been processed."
+        )
+
+    if not state.has_squad:
+        raise ValueError(
+            "A complete squad is required before a "
+            "Gameweek can be processed."
+        )
+
+    if not _recorded_decision_for_gameweek(
+        state.transfer_history,
+        gameweek,
+    ):
+        raise ValueError(
+            "The Gameweek cannot be finalised before its "
+            "transfer decision is recorded."
+        )
+
+    if not _recorded_decision_for_gameweek(
+        state.chip_history,
+        gameweek,
+    ):
+        raise ValueError(
+            "The Gameweek cannot be finalised before its "
+            "chip decision is recorded."
+        )
+
+    state.last_processed_gameweek = gameweek
+
+    state.lifecycle_history.append(
+        {
+            "event": "GAMEWEEK_PROCESSED",
+            "gameweek": gameweek,
+            "free_transfers_ready": int(
+                state.free_transfers
+            ),
+            "bank": round(
+                float(
+                    state.bank
+                ),
+                1,
+            ),
+            "active_chip_period": (
+                _active_chip_period(
+                    gameweek
+                )
+            ),
+        }
+    )
+
+    _validate_state(
+        state
+    )
+
+    return state
+
+
+def _expire_first_half_chips(
+    state: ManagerState,
+) -> tuple[str, ...]:
+    """Expire unused first-half chips at the period boundary."""
+
+    expired: list[str] = []
+
+    first_half = state.chips[
+        "first_half"
+    ]
+
+    for chip_name in CHIP_NAMES:
+        if bool(
+            first_half[
+                chip_name
+            ]
+        ):
+            expired.append(
+                chip_name
+            )
+
+        first_half[
+            chip_name
+        ] = False
+
+    return tuple(
+        expired
+    )
+
+
+def advance_gameweek(
+    state: ManagerState,
+    target_gameweek: int | None = None,
+) -> ManagerState:
+    """
+    Advance the season clock by exactly one Gameweek.
+
+    The active Gameweek must already be finalised. Free transfers
+    are not incremented here because the confirmed transfer plan
+    has already calculated and stored the amount available for the
+    next Gameweek. This keeps transfer rolling single-shot.
+    """
+
+    current_gameweek = int(
+        state.current_gameweek
+    )
+
+    if not gameweek_is_processed(
+        state,
+        current_gameweek,
+    ):
+        raise ValueError(
+            f"Gameweek {current_gameweek} must be processed "
+            "before the season can advance."
+        )
+
+    resolved_target = (
+        current_gameweek + 1
+        if target_gameweek is None
+        else int(
+            target_gameweek
+        )
+    )
+
+    if resolved_target != (
+        current_gameweek + 1
+    ):
+        raise ValueError(
+            "Gameweek lifecycle advances exactly one "
+            "Gameweek at a time."
+        )
+
+    if resolved_target > MAX_GAMEWEEK:
+        raise ValueError(
+            f"Gameweek {MAX_GAMEWEEK} is the final supported "
+            "Gameweek of the season."
+        )
+
+    expired_chips: tuple[str, ...] = tuple()
+
+    if (
+        current_gameweek
+        == FIRST_HALF_FINAL_GAMEWEEK
+        and resolved_target
+        == SECOND_HALF_START_GAMEWEEK
+    ):
+        expired_chips = (
+            _expire_first_half_chips(
+                state
+            )
+        )
+
+    state.current_gameweek = (
+        resolved_target
+    )
+
+    state.lifecycle_history.append(
+        {
+            "event": "GAMEWEEK_ADVANCED",
+            "from_gameweek": current_gameweek,
+            "to_gameweek": resolved_target,
+            "free_transfers_available": int(
+                state.free_transfers
+            ),
+            "bank": round(
+                float(
+                    state.bank
+                ),
+                1,
+            ),
+            "expired_first_half_chips": list(
+                expired_chips
+            ),
+            "active_chip_period": (
+                _active_chip_period(
+                    resolved_target
+                )
+            ),
+        }
     )
 
     _validate_state(
