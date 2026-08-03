@@ -5,11 +5,14 @@ from dataclasses import dataclass, field
 import pandas as pd
 from ortools.sat.python import cp_model
 
+from airaola.finance.price_engine import (
+    add_selling_prices,
+    calculate_transfer_bank_after,
+)
+
 
 SQUAD_SIZE = 15
-BUDGET_LIMIT_TENTHS = 1000
 MAX_PLAYERS_PER_CLUB = 3
-
 MAX_FREE_TRANSFERS = 5
 MAX_TRANSFERS_CONSIDERED = 5
 
@@ -110,10 +113,11 @@ def _validate_inputs(
     current_squad: pd.DataFrame,
     player_pool: pd.DataFrame,
     free_transfers_available: int,
+    bank_available: float,
 ) -> None:
     """Validate transfer-strategy inputs."""
 
-    required_columns = {
+    required_pool_columns = {
         "id",
         "player_name",
         "team_name",
@@ -124,12 +128,23 @@ def _validate_inputs(
         "status",
     }
 
-    squad_missing = required_columns.difference(
-        current_squad.columns
+    required_squad_columns = (
+        required_pool_columns
+        | {
+            "purchase_price",
+        }
     )
 
-    pool_missing = required_columns.difference(
-        player_pool.columns
+    squad_missing = (
+        required_squad_columns.difference(
+            current_squad.columns
+        )
+    )
+
+    pool_missing = (
+        required_pool_columns.difference(
+            player_pool.columns
+        )
     )
 
     if squad_missing:
@@ -164,6 +179,11 @@ def _validate_inputs(
             f"1 and {MAX_FREE_TRANSFERS}."
         )
 
+    if float(bank_available) < 0:
+        raise ValueError(
+            "Available bank cannot be negative."
+        )
+
 
 def _prepare_data(
     current_squad: pd.DataFrame,
@@ -171,7 +191,10 @@ def _prepare_data(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Prepare squad and player-pool data for CP-SAT."""
 
-    squad = current_squad.copy()
+    squad = add_selling_prices(
+        current_squad
+    )
+
     pool = player_pool.copy()
 
     for dataframe in (
@@ -210,11 +233,15 @@ def _prepare_data(
         )
 
     squad = squad.dropna(
-        subset=["id"]
+        subset=[
+            "id",
+        ]
     ).copy()
 
     pool = pool.dropna(
-        subset=["id"]
+        subset=[
+            "id",
+        ]
     ).copy()
 
     squad["id"] = (
@@ -275,7 +302,9 @@ def _prepare_data(
 
     pool = (
         pool.drop_duplicates(
-            subset=["id"],
+            subset=[
+                "id",
+            ],
             keep="first",
         )
         .reset_index(
@@ -283,8 +312,33 @@ def _prepare_data(
         )
     )
 
+    selling_price_lookup = (
+        squad.set_index(
+            "id"
+        )[
+            "selling_price"
+        ]
+        .to_dict()
+    )
+
+    pool["selling_price"] = (
+        pool["id"]
+        .map(
+            selling_price_lookup
+        )
+        .fillna(0.0)
+        .astype(float)
+    )
+
     pool["price_tenths"] = (
         pool["price"]
+        .mul(10)
+        .round()
+        .astype(int)
+    )
+
+    pool["selling_price_tenths"] = (
+        pool["selling_price"]
         .mul(10)
         .round()
         .astype(int)
@@ -307,8 +361,14 @@ def _solve_exact_transfer_count(
     current_squad: pd.DataFrame,
     player_pool: pd.DataFrame,
     transfer_count: int,
+    bank_available: float,
 ) -> pd.DataFrame | None:
-    """Find the best legal squad reachable with exactly N moves."""
+    """
+    Find the best affordable squad reachable with exactly N moves.
+
+    Incoming spending is funded by the saved bank plus the
+    official selling values of the selected outgoing players.
+    """
 
     current_ids = set(
         current_squad["id"]
@@ -318,7 +378,8 @@ def _solve_exact_transfer_count(
 
     selected = {
         index: model.new_bool_var(
-            f"select_player_{int(player['id'])}"
+            "select_player_"
+            f"{int(player['id'])}"
         )
         for index, player
         in player_pool.iterrows()
@@ -374,21 +435,6 @@ def _solve_exact_transfer_count(
             <= MAX_PLAYERS_PER_CLUB
         )
 
-    model.add(
-        sum(
-            selected[index]
-            * int(
-                player_pool.loc[
-                    index,
-                    "price_tenths",
-                ]
-            )
-            for index
-            in player_pool.index
-        )
-        <= BUDGET_LIMIT_TENTHS
-    )
-
     incoming_indexes = [
         index
         for index
@@ -402,6 +448,19 @@ def _solve_exact_transfer_count(
         not in current_ids
     ]
 
+    current_indexes = [
+        index
+        for index
+        in player_pool.index
+        if int(
+            player_pool.loc[
+                index,
+                "id",
+            ]
+        )
+        in current_ids
+    ]
+
     model.add(
         sum(
             selected[index]
@@ -409,6 +468,50 @@ def _solve_exact_transfer_count(
             in incoming_indexes
         )
         == transfer_count
+    )
+
+    bank_tenths = int(
+        round(
+            float(
+                bank_available
+            )
+            * 10
+        )
+    )
+
+    incoming_spend = sum(
+        selected[index]
+        * int(
+            player_pool.loc[
+                index,
+                "price_tenths",
+            ]
+        )
+        for index
+        in incoming_indexes
+    )
+
+    outgoing_funds = sum(
+        (
+            1
+            - selected[index]
+        )
+        * int(
+            player_pool.loc[
+                index,
+                "selling_price_tenths",
+            ]
+        )
+        for index
+        in current_indexes
+    )
+
+    model.add(
+        incoming_spend
+        <= (
+            bank_tenths
+            + outgoing_funds
+        )
     )
 
     model.maximize(
@@ -500,7 +603,7 @@ def _pair_transfer_moves(
             .sort_values(
                 by=[
                     "projected_points",
-                    "price",
+                    "selling_price",
                 ],
                 ascending=[
                     True,
@@ -577,7 +680,9 @@ def _pair_transfer_moves(
             moves.append(
                 TransferMove(
                     player_out_id=int(
-                        player_out["id"]
+                        player_out[
+                            "id"
+                        ]
                     ),
                     player_out_name=str(
                         player_out[
@@ -585,7 +690,9 @@ def _pair_transfer_moves(
                         ]
                     ),
                     player_in_id=int(
-                        player_in["id"]
+                        player_in[
+                            "id"
+                        ]
                     ),
                     player_in_name=str(
                         player_in[
@@ -595,13 +702,17 @@ def _pair_transfer_moves(
                     position=position,
                     selling_price=round(
                         float(
-                            player_out["price"]
+                            player_out[
+                                "selling_price"
+                            ]
                         ),
                         1,
                     ),
                     purchase_price=round(
                         float(
-                            player_in["price"]
+                            player_in[
+                                "price"
+                            ]
                         ),
                         1,
                     ),
@@ -634,7 +745,8 @@ def _free_transfers_next_gameweek(
     )
 
     return min(
-        remaining_free_transfers + 1,
+        remaining_free_transfers
+        + 1,
         MAX_FREE_TRANSFERS,
     )
 
@@ -682,7 +794,10 @@ def _recommendation_strength(
     if net_gain >= 3.0:
         return "STRONG"
 
-    if net_gain >= MINIMUM_NET_STRATEGIC_GAIN:
+    if (
+        net_gain
+        >= MINIMUM_NET_STRATEGIC_GAIN
+    ):
         return "MODERATE"
 
     return "HOLD"
@@ -814,6 +929,7 @@ def recommend_transfer_strategy(
     current_squad: pd.DataFrame,
     player_pool: pd.DataFrame,
     free_transfers_available: int = 1,
+    bank_available: float = 0.0,
     minimum_net_gain: float = (
         MINIMUM_NET_STRATEGIC_GAIN
     ),
@@ -821,9 +937,13 @@ def recommend_transfer_strategy(
     """
     Compare zero to five transfers and choose the best plan.
 
-    The engine applies point-hit costs beyond the available
-    transfer bank and a strategic opportunity cost for spending
-    banked free transfers.
+    Outgoing players use official FPL selling prices. Incoming
+    players use current market prices. Affordability uses the
+    saved manager bank plus the proceeds from outgoing players.
+
+    Point-hit costs apply beyond the available transfer bank.
+    A strategic opportunity cost applies when banked free
+    transfers are spent.
     """
 
     _validate_inputs(
@@ -832,6 +952,7 @@ def recommend_transfer_strategy(
         free_transfers_available=(
             free_transfers_available
         ),
+        bank_available=bank_available,
     )
 
     squad, pool = _prepare_data(
@@ -851,15 +972,11 @@ def recommend_transfer_strategy(
         ].sum()
     )
 
-    current_cost = float(
-        squad[
-            "price"
-        ].sum()
-    )
-
-    bank_before = max(
-        100.0 - current_cost,
-        0.0,
+    bank_before = round(
+        float(
+            bank_available
+        ),
+        1,
     )
 
     best_plan: TransferPlan | None = None
@@ -873,6 +990,7 @@ def recommend_transfer_strategy(
                 current_squad=squad,
                 player_pool=pool,
                 transfer_count=transfer_count,
+                bank_available=bank_before,
             )
         )
 
@@ -927,20 +1045,23 @@ def recommend_transfer_strategy(
             - transfer_bank_cost
         )
 
-        proposed_cost = float(
-            proposed_squad[
-                "price"
-            ].sum()
-        )
-
-        bank_after = max(
-            100.0 - proposed_cost,
-            0.0,
-        )
-
         moves = _pair_transfer_moves(
             current_squad=squad,
             proposed_squad=proposed_squad,
+        )
+
+        bank_after = (
+            calculate_transfer_bank_after(
+                bank_before=bank_before,
+                outgoing_selling_prices=[
+                    move.selling_price
+                    for move in moves
+                ],
+                incoming_purchase_prices=[
+                    move.purchase_price
+                    for move in moves
+                ],
+            )
         )
 
         plan = TransferPlan(
@@ -979,10 +1100,7 @@ def recommend_transfer_strategy(
                 minimum_net_gain,
                 2,
             ),
-            bank_before=round(
-                bank_before,
-                1,
-            ),
+            bank_before=bank_before,
             bank_after=round(
                 bank_after,
                 1,
@@ -1004,7 +1122,9 @@ def recommend_transfer_strategy(
                 f"The {transfer_count}-transfer plan "
                 f"adds {gross_gain:.2f} projected "
                 "points before strategic costs and "
-                f"{net_gain:.2f} points after them."
+                f"{net_gain:.2f} points after them. "
+                "Official selling prices were used "
+                "for every outgoing player."
             ),
         )
 

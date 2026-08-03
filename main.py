@@ -4,6 +4,10 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from airaola.finance.price_engine import (
+    SquadValueResult,
+    calculate_squad_value,
+)
 from airaola.data.fetch_fpl_data import (
     run_recruitment_pipeline,
 )
@@ -396,6 +400,105 @@ def print_optimised_squad(
 
     for error in result.errors:
         print(f"- {error}")
+
+
+def print_squad_value(
+    squad_value: SquadValueResult,
+) -> None:
+    """Display Airaola's official squad-value calculation."""
+
+    print()
+    print("=" * 60)
+    print("Finance Department")
+    print("=" * 60)
+
+    print(
+        "Original purchase value: "
+        f"£{squad_value.purchase_value:.1f}m"
+    )
+    print(
+        "Current market value: "
+        f"£{squad_value.current_market_value:.1f}m"
+    )
+    print(
+        "Official selling value: "
+        f"£{squad_value.selling_value:.1f}m"
+    )
+    print(
+        "Money in bank: "
+        f"£{squad_value.bank:.1f}m"
+    )
+    print(
+        "Total available budget: "
+        f"£{squad_value.available_budget:.1f}m"
+    )
+
+    print()
+    print(
+        "Market value change: "
+        f"{squad_value.market_change:+.1f}m"
+    )
+    print(
+        "Realised squad-value change: "
+        f"{squad_value.realised_change:+.1f}m"
+    )
+    print(
+        "Total unrealised price rises: "
+        f"£{squad_value.unrealised_profit:.1f}m"
+    )
+    print(
+        "Profit retained if sold now: "
+        f"£{squad_value.retained_profit:.1f}m"
+    )
+    print(
+        "Value lost through price falls: "
+        f"£{squad_value.lost_value:.1f}m"
+    )
+
+    player_rows = [
+        {
+            "player_name": result.player_name,
+            "bought": result.purchase_price,
+            "current": result.current_price,
+            "selling": result.selling_price,
+            "market_change": result.market_change,
+            "realised_change": result.realised_change,
+        }
+        for result in squad_value.player_prices
+        if (
+            result.market_change != 0.0
+            or result.realised_change != 0.0
+        )
+    ]
+
+    if not player_rows:
+        print()
+        print(
+            "Individual price movements: none"
+        )
+        return
+
+    movements = pd.DataFrame(
+        player_rows
+    ).sort_values(
+        by=[
+            "market_change",
+            "player_name",
+        ],
+        ascending=[
+            False,
+            True,
+        ],
+    )
+
+    print()
+    print("Individual price movements:")
+    print(
+        movements.to_string(
+            index=False,
+            col_space=12,
+        )
+    )
 
 
 def print_starting_xi(
@@ -1116,6 +1219,15 @@ def main() -> None:
 
         print_optimised_squad(squad)
 
+        squad_value = calculate_squad_value(
+            squad=squad,
+            bank=manager_state.bank,
+        )
+
+        print_squad_value(
+            squad_value
+        )
+
         print()
         print(
             "Transfer Strategy Department: "
@@ -1128,6 +1240,9 @@ def main() -> None:
                 player_pool=projected_players,
                 free_transfers_available=(
                     manager_state.free_transfers
+                ),
+                bank_available=(
+                    manager_state.bank
                 ),
             )
         )

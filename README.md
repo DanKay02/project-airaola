@@ -201,3 +201,21 @@ The first release will:
 > Free Hit and Wildcard evaluation are intentionally deferred until temporary and permanent squad re-optimisation are integrated.
 
 > This release gives Project Airaola its first true chip brain, allowing it to preserve chips when ordinary Gameweeks fail to justify their use.
+
+### v0.1.16 | Price and Squad Value Engine
+
+> Airaola now understands that a player’s market price is not always the amount available when selling them.
+
+>The finance engine calculates official FPL selling prices using each player’s saved purchase price and current market price. Price drops are absorbed in full, while profits from price rises are shared according to FPL selling-value rules.
+
+>Transfer planning now uses:
+
+> - official selling prices for outgoing players
+> - current market prices for incoming players
+> - the manager’s saved money in the bank
+> - accurate affordability across one-to-five-transfer plans
+> - correct post-transfer bank calculations
+
+>A new Finance Department report displays the squad’s original purchase value, current market value, official selling value, usable budget, retained profit and losses caused by price falls.
+
+>The numbers now know the difference between looking rich and being able to spend it.
