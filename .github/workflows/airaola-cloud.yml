@@ -1,0 +1,90 @@
+name: Project Airaola Cloud Manager
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Airaola run mode"
+        required: true
+        default: "autonomous"
+        type: choice
+        options:
+          - autonomous
+          - dry-run
+
+  schedule:
+    - cron: "17 0,6,12,18 * * *"
+      timezone: "Europe/London"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: project-airaola-manager
+  cancel-in-progress: false
+
+jobs:
+  manage:
+    name: Airaola Management Cycle
+    runs-on: ubuntu-latest
+
+    env:
+      AIRAOLA_EMAIL_SENDER: ${{ secrets.AIRAOLA_EMAIL_SENDER }}
+      AIRAOLA_EMAIL_RECIPIENT: ${{ secrets.AIRAOLA_EMAIL_RECIPIENT }}
+      AIRAOLA_EMAIL_APP_PASSWORD: ${{ secrets.AIRAOLA_EMAIL_APP_PASSWORD }}
+
+    steps:
+      - name: Check out Project Airaola
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Install Project Airaola
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run tests for manual cloud launch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python -m pytest -q
+
+      - name: Run autonomous manager
+        if: |
+          github.event_name == 'schedule' ||
+          github.event.inputs.mode == 'autonomous'
+        run: |
+          python main.py --autonomous --send-email
+
+      - name: Run cloud dry-run
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.mode == 'dry-run'
+        run: |
+          python main.py --dry-run --send-email
+
+      - name: Commit Airaola state and reports
+        if: github.event_name == 'schedule' || github.event.inputs.mode == 'autonomous'
+        run: |
+          git config user.name "Project Airaola"
+          git config user.email "airaola@users.noreply.github.com"
+
+          git add data/state/manager_state.json
+          git add data/reports/
+
+          if git diff --cached --quiet; then
+            echo "No persistent Airaola changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Airaola: update autonomous manager state"
+
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
+          git push origin "HEAD:${GITHUB_REF_NAME}"

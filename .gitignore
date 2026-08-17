@@ -30,4 +30,5 @@ data/processed/*
 .vscode/
 .idea/
 .DS_Store
-Thumbs.db
+Thumbs.dbdata/logs/
+/data/logs/

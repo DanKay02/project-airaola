@@ -360,3 +360,82 @@ The first release will:
 > Email failures do not delete generated reports, reverse completed analysis or corrupt persistent season memory.
 
 > Weekly reporting is now capable of travelling from Airaola’s analysis engine directly to the manager’s inbox.
+
+### v0.1.22 | Autonomous Cloud Manager
+
+> Airaola can now operate as an autonomous FPL manager without requiring the local PC to remain online.
+
+> Autonomous mode is explicitly enabled with:
+
+> `python main.py --autonomous --send-email`
+
+> In autonomous mode, Airaola:
+
+> - makes its own transfer, lineup, captaincy and chip decisions
+> - approves its own state changes without interactive confirmation
+> - operates only inside the final 24 hours before the official FPL deadline
+> - refuses to operate during preseason
+> - refuses to operate after an expired or unresolved deadline
+> - refuses to advance an incomplete Gameweek lifecycle
+> - automatically advances one completed Gameweek when official FPL timing requires it
+> - preserves duplicate-Gameweek lifecycle protection
+> - generates the standard weekly `.txt` and `.html` decision reports
+> - emails the final instructions directly to the manager
+
+> The official FPL account is never accessed or modified by Project Airaola.
+
+> Airaola remains responsible for the football decisions. The manager manually carries out Airaola's emailed instructions inside the official FPL application.
+
+> Cloud execution is provided through GitHub Actions.
+
+> The autonomous cloud cycle follows:
+
+> `GitHub Actions wakes Airaola`
+>
+> `→ downloads the latest Project Airaola season state`
+>
+> `→ contacts the official FPL data source`
+>
+> `→ checks the official Gameweek and deadline`
+>
+> `→ evaluates the autonomous safety gate`
+>
+> `→ analyses fixtures and player projections`
+>
+> `→ selects transfers, lineup, captaincy and chip strategy`
+>
+> `→ approves its own decisions`
+>
+> `→ updates manager_state.json`
+>
+> `→ generates the weekly decision reports`
+>
+> `→ emails the manager`
+>
+> `→ commits the updated season state back to GitHub`
+
+> GitHub repository secrets securely provide the email configuration:
+
+> - `AIRAOLA_EMAIL_SENDER`
+> - `AIRAOLA_EMAIL_RECIPIENT`
+> - `AIRAOLA_EMAIL_APP_PASSWORD`
+
+> No SMTP credentials or passwords are stored inside the repository.
+
+> Scheduled cloud runs periodically check official FPL timing. Runs outside the permitted autonomous deadline window stop safely without making a football decision or changing the current Gameweek lifecycle.
+
+> Autonomous Gameweek advancement is permitted only when the saved Gameweek has already been fully processed and official FPL timing confirms that exactly one advancement is required.
+
+> An incomplete Gameweek can never be automatically advanced.
+
+> Manual cloud runs are also available through GitHub Actions in either `autonomous` or `dry-run` mode.
+
+> Dry-run cloud execution may perform the complete analysis and email the weekly report while preserving `manager_state.json` unchanged.
+
+> The local `scripts/run_scheduled.ps1` launcher remains available as a fallback for scheduled or manual Windows execution.
+
+> Project Airaola now has its own persistent cloud runtime.
+
+> `Data → Decisions → State → Report → Inbox`
+
+> The manager no longer needs to wake Airaola. Airaola wakes itself.

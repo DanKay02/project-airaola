@@ -257,6 +257,134 @@ def deadline_blocks_weekly_cycle(
     }
 
 
+
+def autonomous_run_is_allowed(
+    arguments: argparse.Namespace,
+    intelligence: DeadlineIntelligence,
+) -> bool:
+    """Enforce the deadline safety gate for autonomous runs."""
+
+    if not arguments.autonomous:
+        return True
+
+    print()
+    print("=" * 60)
+    print("Autonomous Safety Gate")
+    print("=" * 60)
+
+    if intelligence.state_status == SEASON_NOT_STARTED:
+        print("Status: BLOCKED")
+        print(
+            "Reason: the official FPL season has not started. "
+            "Autonomous processing is disabled during preseason."
+        )
+        return False
+
+    hours_remaining = intelligence.hours_until_deadline
+
+    if hours_remaining is None:
+        print("Status: BLOCKED")
+        print(
+            "Reason: no valid upcoming deadline could be resolved."
+        )
+        return False
+
+    if hours_remaining <= 0:
+        print("Status: BLOCKED")
+        print(
+            "Reason: the official deadline has already passed."
+        )
+        return False
+
+    if hours_remaining > 24:
+        print("Status: BLOCKED")
+        print(
+            "Reason: autonomous decisions may only be processed "
+            "inside the final 24 hours before the deadline."
+        )
+        print(
+            f"Hours remaining: {hours_remaining:.2f}"
+        )
+        return False
+
+    print("Status: APPROVED")
+    print(
+        "The official deadline is inside the final 24-hour "
+        "autonomous decision window."
+    )
+    print(
+        f"Hours remaining: {hours_remaining:.2f}"
+    )
+    return True
+
+
+def autonomous_sync_gameweek_state(
+    arguments: argparse.Namespace,
+    intelligence: DeadlineIntelligence,
+    manager_state: ManagerState,
+    bootstrap_data: dict,
+) -> tuple[ManagerState, DeadlineIntelligence, bool]:
+    """Advance one completed Gameweek when official timing requires it.
+
+    Autonomous cloud runs may safely move the saved season clock forward
+    only when the current saved Gameweek has already been fully processed
+    and official FPL timing says exactly one advancement is required.
+    """
+
+    if not arguments.autonomous:
+        return manager_state, intelligence, False
+
+    if intelligence.state_status != ADVANCEMENT_REQUIRED:
+        return manager_state, intelligence, False
+
+    current_gameweek = int(manager_state.current_gameweek)
+
+    print()
+    print("=" * 60)
+    print("Autonomous Season Sync")
+    print("=" * 60)
+
+    if not gameweek_is_processed(
+        manager_state,
+        current_gameweek,
+    ):
+        print("Status: BLOCKED")
+        print(
+            f"Gameweek {current_gameweek} is not fully processed. "
+            "Airaola will not advance an incomplete lifecycle."
+        )
+        return manager_state, intelligence, False
+
+    manager_state = advance_gameweek(
+        state=manager_state
+    )
+
+    save_manager_state(
+        state=manager_state,
+        state_path=STATE_PATH,
+    )
+
+    refreshed_intelligence = analyse_deadline_intelligence(
+        bootstrap_data=bootstrap_data,
+        saved_gameweek=manager_state.current_gameweek,
+    )
+
+    print("Status: ADVANCED")
+    print(
+        f"Saved season clock advanced from Gameweek "
+        f"{current_gameweek} to Gameweek "
+        f"{manager_state.current_gameweek}."
+    )
+    print(
+        "Reason: the previous Gameweek was fully processed and "
+        "official FPL timing now requires the next lifecycle."
+    )
+    print(
+        f"Manager state saved successfully: {STATE_PATH}"
+    )
+
+    return manager_state, refreshed_intelligence, True
+
 def print_recruitment_summary(
     players: pd.DataFrame,
 ) -> None:
@@ -1291,6 +1419,16 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     mode_group.add_argument(
+        "--autonomous",
+        action="store_true",
+        help=(
+            "Allow Airaola to approve and save its own "
+            "weekly decisions inside the final 24 hours "
+            "before the official deadline."
+        ),
+    )
+
+    mode_group.add_argument(
         "--dry-run",
         action="store_true",
         help=(
@@ -1317,7 +1455,15 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
 
-    return parser.parse_args()
+    arguments = parser.parse_args()
+
+    if arguments.autonomous and arguments.advance_gameweek:
+        parser.error(
+            "--autonomous cannot be combined with "
+            "--advance-gameweek."
+        )
+
+    return arguments
 
 
 def print_run_mode(
@@ -1327,7 +1473,13 @@ def print_run_mode(
 
     print("=" * 60)
 
-    if arguments.auto_apply:
+    if arguments.autonomous:
+        print("Run mode: AUTONOMOUS MANAGER")
+        print(
+            "Airaola may approve and save its own "
+            "decisions inside the final 24-hour window."
+        )
+    elif arguments.auto_apply:
         print("Run mode: AUTO APPLY")
         print(
             "Confirmed decisions will be saved "
@@ -1359,6 +1511,14 @@ def confirm_state_change(
     Auto-apply approves automatically. Dry-run always refuses.
     Interactive mode accepts only y or yes.
     """
+
+    if arguments.autonomous:
+        print()
+        print(
+            "Autonomous manager mode: Airaola approved "
+            "its own state change."
+        )
+        return True
 
     if arguments.auto_apply:
         print()
@@ -1516,6 +1676,33 @@ def main() -> None:
         print_deadline_intelligence(
             deadline_intelligence
         )
+
+        (
+            manager_state,
+            deadline_intelligence,
+            autonomous_state_synced,
+        ) = autonomous_sync_gameweek_state(
+            arguments=arguments,
+            intelligence=deadline_intelligence,
+            manager_state=manager_state,
+            bootstrap_data=bootstrap_data,
+        )
+
+        if autonomous_state_synced:
+            print_deadline_intelligence(
+                deadline_intelligence
+            )
+
+        if not autonomous_run_is_allowed(
+            arguments=arguments,
+            intelligence=deadline_intelligence,
+        ):
+            print()
+            print(
+                "Autonomous run stopped before optimisation, "
+                "report generation, email delivery or state mutation."
+            )
+            return
 
         if deadline_blocks_weekly_cycle(
             deadline_intelligence
