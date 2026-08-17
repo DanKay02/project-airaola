@@ -49,6 +49,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .
+          python -m pip install pytest
 
       - name: Run tests for manual cloud launch
         if: github.event_name == 'workflow_dispatch'
@@ -70,7 +71,9 @@ jobs:
           python main.py --dry-run --send-email
 
       - name: Commit Airaola state and reports
-        if: github.event_name == 'schedule' || github.event.inputs.mode == 'autonomous'
+        if: |
+          github.event_name == 'schedule' ||
+          github.event.inputs.mode == 'autonomous'
         run: |
           git config user.name "Project Airaola"
           git config user.email "airaola@users.noreply.github.com"
