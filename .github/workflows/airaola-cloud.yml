@@ -48,8 +48,7 @@ jobs:
       - name: Install Project Airaola
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install pytest ortools
+          python -m pip install -e ".[dev]"
 
       - name: Run tests for manual cloud launch
         if: github.event_name == 'workflow_dispatch'

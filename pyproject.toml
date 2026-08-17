@@ -11,6 +11,12 @@ dependencies = [
     "pandas",
     "requests",
     "PyYAML",
+    "ortools",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
 ]
 
 [tool.setuptools]
