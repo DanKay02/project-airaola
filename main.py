@@ -2216,6 +2216,13 @@ def main() -> None:
                     "Configuration error: "
                     f"{error}"
                 )
+
+                if arguments.autonomous:
+                    raise RuntimeError(
+                        "Autonomous email delivery could not be "
+                        "configured. Persistent cloud state must "
+                        "not be committed."
+                    ) from error
             else:
                 delivery_result = send_report_email(
                     report=saved_report,
@@ -2245,6 +2252,13 @@ def main() -> None:
                         "Reason: "
                         f"{delivery_result.error_message}"
                     )
+
+                    if arguments.autonomous:
+                        raise RuntimeError(
+                            "Autonomous email delivery failed. "
+                            "Persistent cloud state must not be "
+                            "committed."
+                        )
         else:
             print()
             print(
