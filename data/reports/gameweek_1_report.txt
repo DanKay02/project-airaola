@@ -5,8 +5,8 @@ Data. Decisions. Domination.
 
 DEADLINE
 Official deadline: Gameweek 1, 2026-08-21 18:30 BST
-Hours remaining: 429.68
-Analysis window: EARLY
+Hours remaining: 2.15
+Analysis window: ON TIME
 Season-clock status: SEASON NOT STARTED
 
 FINANCE
@@ -17,19 +17,18 @@ Money in bank: £0.0m
 Available budget: £100.0m
 
 TRANSFER DECISION
-Decision: ROLL
-Recommendation strength: HOLD
-Gross projected gain: -0.27
-Net strategic gain: -1.02
+Decision: EXECUTE
+Recommendation strength: MODERATE
+Gross projected gain: +3.66
+Net strategic gain: +2.91
 Hit cost: 0.00
-Reason: The best immediate plan produces -1.02 net strategic points, below the +1.50 execution threshold. Airaola therefore preserves the transfer and increases the bank.
+Reason: The 1-transfer plan adds 3.66 projected points before strategic costs and 2.91 points after them. Official selling prices were used for every outgoing player.
 
 MANUAL TRANSFER ACTIONS
-- Roll the free transfer.
-- Expected free transfers next Gameweek: 2
+- Sell Bruno Guimarães Rodriguez Moura (£7.0m) and buy Dominik Szoboszlai (£7.0m).
 
 STARTING XI
-Formation: 3-5-2
+Formation: 3-4-3
 - GKP: Gianluigi Donnarumma (Man City) | 2.45 pts
 - DEF: Gabriel dos Santos Magalhães (Arsenal) [C] | 4.48 pts
 - DEF: Marc Guéhi (Man City) | 3.03 pts
@@ -37,22 +36,22 @@ Formation: 3-5-2
 - MID: Bruno Borges Fernandes (Man Utd) [VC] | 4.21 pts
 - MID: Morgan Gibbs-White (Nott'm Forest) | 3.50 pts
 - MID: Antoine Semenyo (Man City) | 3.37 pts
-- MID: Bruno Guimarães Rodriguez Moura (Newcastle) | 2.97 pts
 - MID: Harry Wilson (Leeds) | 2.57 pts
 - FWD: João Pedro Junqueira de Jesus (Chelsea) | 3.10 pts
 - FWD: Richarlison de Andrade (Spurs) | 2.56 pts
+- FWD: Dominic Calvert-Lewin (Leeds) | 2.38 pts
 
 Captain: Gabriel dos Santos Magalhães (4.48 pts)
 Vice-captain: Bruno Borges Fernandes (4.21 pts)
-Projected XI points before captaincy: 34.66
-Projected team total with captaincy: 39.14
+Projected XI points before captaincy: 34.07
+Projected team total with captaincy: 38.55
 
 BENCH
-- 1. Dominic Calvert-Lewin (Leeds, FWD) | 2.38 pts
+- 1. Dominik Szoboszlai (Liverpool, MID) | 2.32 pts
 - 2. Tyrick Mitchell (Crystal Palace, DEF) | 1.94 pts
 - 3. Matty Cash (Aston Villa, DEF) | 1.82 pts
 - 4. Martin Dubravka (Spurs, GKP) | 1.52 pts
-Projected bench points: 7.66
+Projected bench points: 7.60
 
 CHIP DECISION
 Decision: NO CHIP
@@ -65,7 +64,7 @@ MANUAL CHIP ACTION
 - Do not activate a chip.
 
 LIFECYCLE
-Lifecycle status: OPEN
+Lifecycle status: PROCESSED
 Deadline recommendation: The official FPL season has not started. Initial squad planning may continue, but no Gameweek advancement is required.
 
 FINAL CHECKLIST

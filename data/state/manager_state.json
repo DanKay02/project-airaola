@@ -2,6 +2,7 @@
   "current_gameweek": 1,
   "free_transfers": 1,
   "bank": 0.0,
+  "last_processed_gameweek": 1,
   "squad": [
     {
       "player_id": 4,
@@ -44,10 +45,6 @@
       "purchase_price": 12.0
     },
     {
-      "player_id": 452,
-      "purchase_price": 7.0
-    },
-    {
       "player_id": 480,
       "purchase_price": 8.0
     },
@@ -62,22 +59,72 @@
     {
       "player_id": 527,
       "purchase_price": 6.0
+    },
+    {
+      "player_id": 368,
+      "purchase_price": 7.0
     }
   ],
   "chips": {
-  "first_half": {
-    "wildcard": true,
-    "free_hit": true,
-    "bench_boost": true,
-    "triple_captain": true
+    "first_half": {
+      "wildcard": true,
+      "free_hit": true,
+      "bench_boost": true,
+      "triple_captain": true
+    },
+    "second_half": {
+      "wildcard": true,
+      "free_hit": true,
+      "bench_boost": true,
+      "triple_captain": true
+    },
+    "last_free_hit_gameweek": null
   },
-  "second_half": {
-    "wildcard": true,
-    "free_hit": true,
-    "bench_boost": true,
-    "triple_captain": true
-  },
-  "last_free_hit_gameweek": null
-},
-  "transfer_history": []
+  "transfer_history": [
+    {
+      "gameweek": 1,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 1,
+      "hit_cost": 0.0,
+      "gross_projected_gain": 3.66,
+      "net_strategic_gain": 2.91,
+      "bank_before": 0.0,
+      "bank_after": 0.0,
+      "moves": [
+        {
+          "player_out_id": 452,
+          "player_out_name": "Bruno Guimarães Rodriguez Moura",
+          "player_in_id": 368,
+          "player_in_name": "Dominik Szoboszlai",
+          "position": "MID",
+          "selling_price": 7.0,
+          "purchase_price": 7.0,
+          "projected_gain": 3.66,
+          "next_gameweek_gain": 0.2
+        }
+      ]
+    }
+  ],
+  "chip_history": [
+    {
+      "gameweek": 1,
+      "period": "first_half",
+      "decision": "NO CHIP",
+      "projected_gain": 0.0,
+      "adjusted_gain": 0.0,
+      "recommendation_strength": "HOLD",
+      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was TRIPLE CAPTAIN at 4.48 adjusted points against a 8.00 threshold."
+    }
+  ],
+  "lifecycle_history": [
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 1,
+      "free_transfers_ready": 1,
+      "bank": 0.0,
+      "active_chip_period": "first_half"
+    }
+  ]
 }
