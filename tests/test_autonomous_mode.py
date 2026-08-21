@@ -106,7 +106,7 @@ def test_autonomous_run_is_blocked_during_preseason(
 
     assert not allowed
     assert "Status: BLOCKED" in output
-    assert "disabled during preseason" in output
+    assert "final 24 hours before the deadline" in output
 
 
 def test_autonomous_run_is_blocked_without_deadline(

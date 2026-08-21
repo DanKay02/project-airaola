@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import copy
 from pathlib import Path
 
@@ -271,14 +271,6 @@ def autonomous_run_is_allowed(
     print("=" * 60)
     print("Autonomous Safety Gate")
     print("=" * 60)
-
-    if intelligence.state_status == SEASON_NOT_STARTED:
-        print("Status: BLOCKED")
-        print(
-            "Reason: the official FPL season has not started. "
-            "Autonomous processing is disabled during preseason."
-        )
-        return False
 
     hours_remaining = intelligence.hours_until_deadline
 
@@ -646,11 +638,11 @@ def print_optimised_squad(
         f"Players selected: {result.player_count}"
     )
     print(
-        f"Squad cost: £{result.total_cost:.1f}m"
+        f"Squad cost: Â£{result.total_cost:.1f}m"
     )
     print(
         "Budget remaining: "
-        f"£{budget_remaining:.1f}m"
+        f"Â£{budget_remaining:.1f}m"
     )
     print(
         "Combined projected points: "
@@ -667,7 +659,7 @@ def print_optimised_squad(
 
         print(
             "Original purchase cost: "
-            f"£{purchase_cost:.1f}m"
+            f"Â£{purchase_cost:.1f}m"
         )
 
     if result.is_valid:
@@ -696,23 +688,23 @@ def print_squad_value(
 
     print(
         "Original purchase value: "
-        f"£{squad_value.purchase_value:.1f}m"
+        f"Â£{squad_value.purchase_value:.1f}m"
     )
     print(
         "Current market value: "
-        f"£{squad_value.current_market_value:.1f}m"
+        f"Â£{squad_value.current_market_value:.1f}m"
     )
     print(
         "Official selling value: "
-        f"£{squad_value.selling_value:.1f}m"
+        f"Â£{squad_value.selling_value:.1f}m"
     )
     print(
         "Money in bank: "
-        f"£{squad_value.bank:.1f}m"
+        f"Â£{squad_value.bank:.1f}m"
     )
     print(
         "Total available budget: "
-        f"£{squad_value.available_budget:.1f}m"
+        f"Â£{squad_value.available_budget:.1f}m"
     )
 
     print()
@@ -726,15 +718,15 @@ def print_squad_value(
     )
     print(
         "Total unrealised price rises: "
-        f"£{squad_value.unrealised_profit:.1f}m"
+        f"Â£{squad_value.unrealised_profit:.1f}m"
     )
     print(
         "Profit retained if sold now: "
-        f"£{squad_value.retained_profit:.1f}m"
+        f"Â£{squad_value.retained_profit:.1f}m"
     )
     print(
         "Value lost through price falls: "
-        f"£{squad_value.lost_value:.1f}m"
+        f"Â£{squad_value.lost_value:.1f}m"
     )
 
     player_rows = [
@@ -937,7 +929,7 @@ def print_transfer_plan(
     )
     print(
         "Money in bank before: "
-        f"£{plan.bank_before:.1f}m"
+        f"Â£{plan.bank_before:.1f}m"
     )
 
     if plan.decision in {"ROLL", "HOLD"}:
@@ -1025,10 +1017,10 @@ def print_transfer_plan(
         print(
             f"{transfer_number}. "
             f"SELL {move.player_out_name} "
-            f"£{move.selling_price:.1f}m "
-            "→ "
+            f"Â£{move.selling_price:.1f}m "
+            "â†’ "
             f"BUY {move.player_in_name} "
-            f"£{move.purchase_price:.1f}m "
+            f"Â£{move.purchase_price:.1f}m "
             f"({move.position})"
         )
         print(
@@ -1061,7 +1053,7 @@ def print_transfer_plan(
     )
     print(
         "Money in bank after: "
-        f"£{plan.bank_after:.1f}m"
+        f"Â£{plan.bank_after:.1f}m"
     )
     print(
         "Projected free transfers next Gameweek: "
@@ -1094,7 +1086,7 @@ def print_manager_state(
         f"{state.free_transfers}"
     )
     print(
-        f"Money in bank: £{state.bank:.1f}m"
+        f"Money in bank: Â£{state.bank:.1f}m"
     )
     print(
         "Recorded transfer decisions: "
@@ -1170,15 +1162,15 @@ def print_chip_squad_evaluation(
     )
     print(
         "Available budget: "
-        f"£{evaluation.available_budget:.1f}m"
+        f"Â£{evaluation.available_budget:.1f}m"
     )
     print(
         "Optimised squad cost: "
-        f"£{evaluation.optimised_squad_cost:.1f}m"
+        f"Â£{evaluation.optimised_squad_cost:.1f}m"
     )
     print(
         "Bank remaining: "
-        f"£{evaluation.bank_remaining:.1f}m"
+        f"Â£{evaluation.bank_remaining:.1f}m"
     )
     print(
         "Secure players: "
