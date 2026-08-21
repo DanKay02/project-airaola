@@ -87,6 +87,10 @@ jobs:
 
           git commit -m "Airaola: update autonomous manager state"
 
+          echo "Removing temporary runner-generated changes..."
+          git restore --worktree .
+          git clean -fd
+
           git pull --rebase origin "${GITHUB_REF_NAME}"
 
           git push origin "HEAD:${GITHUB_REF_NAME}"
