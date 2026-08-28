@@ -1,0 +1,81 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 2 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 2, 2026-08-28 18:30 BST
+Hours remaining: 0.31
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £100.0m
+Current market value: £100.1m
+Official selling value: £100.0m
+Money in bank: £0.0m
+Available budget: £100.0m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: EXCEPTIONAL
+Gross projected gain: +139.02
+Net strategic gain: +122.27
+Hit cost: 16.00
+Reason: The 5-transfer plan adds 139.02 projected points before strategic costs and 122.27 points after them. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Martin Dubravka (£4.0m) and buy Konstantinos Tzolakis (£4.5m).
+- Sell Matty Cash (£4.5m) and buy Benjamin White (£5.5m).
+- Sell Morgan Gibbs-White (£8.0m) and buy Anton Stach (£6.0m).
+- Sell Antoine Semenyo (£8.5m) and buy Cody Gakpo (£7.0m).
+- Sell Bruno Borges Fernandes (£12.0m) and buy Kiernan Dewsbury-Hall (£6.5m).
+- This plan includes a 16-point hit.
+
+STARTING XI
+Formation: 4-5-1
+- GKP: Konstantinos Tzolakis (Hull City) | 5.64 pts
+- DEF: Marc Guéhi (Man City) | 5.06 pts
+- DEF: Benjamin White (Arsenal) | 5.03 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 2.28 pts
+- DEF: Marcos Senesi Barón (Spurs) | 1.54 pts
+- MID: Anton Stach (Leeds) [C] | 7.11 pts
+- MID: Cody Gakpo (Liverpool) | 6.53 pts
+- MID: Kiernan Dewsbury-Hall (Everton) | 5.59 pts
+- MID: Dominik Szoboszlai (Liverpool) | 4.43 pts
+- MID: Harry Wilson (Leeds) | 0.95 pts
+- FWD: João Pedro Junqueira de Jesus (Chelsea) [VC] | 6.79 pts
+
+Captain: Anton Stach (7.11 pts)
+Vice-captain: João Pedro Junqueira de Jesus (6.79 pts)
+Projected XI points before captaincy: 50.95
+Projected team total with captaincy: 58.06
+
+BENCH
+- 1. Richarlison de Andrade (Spurs, FWD) | 0.77 pts
+- 2. Dominic Calvert-Lewin (Leeds, FWD) | 0.47 pts
+- 3. Tyrick Mitchell (Crystal Palace, DEF) | 0.42 pts
+- 4. Gianluigi Donnarumma (Man City, GKP) | 1.37 pts
+Projected bench points: 3.03
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 200.90 adjusted points against a 18.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Anton Stach.
+- Set vice-captain to João Pedro Junqueira de Jesus.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.

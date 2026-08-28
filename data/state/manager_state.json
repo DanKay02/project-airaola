@@ -1,16 +1,12 @@
 {
   "current_gameweek": 2,
   "free_transfers": 1,
-  "bank": 0.0,
-  "last_processed_gameweek": 1,
+  "bank": 7.5,
+  "last_processed_gameweek": 2,
   "squad": [
     {
       "player_id": 4,
       "purchase_price": 8.0
-    },
-    {
-      "player_id": 32,
-      "purchase_price": 4.5
     },
     {
       "player_id": 165,
@@ -37,22 +33,6 @@
       "purchase_price": 6.0
     },
     {
-      "player_id": 397,
-      "purchase_price": 8.5
-    },
-    {
-      "player_id": 426,
-      "purchase_price": 12.0
-    },
-    {
-      "player_id": 480,
-      "purchase_price": 8.0
-    },
-    {
-      "player_id": 497,
-      "purchase_price": 4.0
-    },
-    {
       "player_id": 498,
       "purchase_price": 6.0
     },
@@ -63,6 +43,26 @@
     {
       "player_id": 368,
       "purchase_price": 7.0
+    },
+    {
+      "player_id": 572,
+      "purchase_price": 4.5
+    },
+    {
+      "player_id": 10,
+      "purchase_price": 5.5
+    },
+    {
+      "player_id": 335,
+      "purchase_price": 6.0
+    },
+    {
+      "player_id": 367,
+      "purchase_price": 7.0
+    },
+    {
+      "player_id": 236,
+      "purchase_price": 6.5
     }
   ],
   "chips": {
@@ -105,6 +105,75 @@
           "next_gameweek_gain": 0.2
         }
       ]
+    },
+    {
+      "gameweek": 2,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 5,
+      "hit_cost": 16.0,
+      "gross_projected_gain": 139.02,
+      "net_strategic_gain": 122.27,
+      "bank_before": 0.0,
+      "bank_after": 7.5,
+      "moves": [
+        {
+          "player_out_id": 497,
+          "player_out_name": "Martin Dubravka",
+          "player_in_id": 572,
+          "player_in_name": "Konstantinos Tzolakis",
+          "position": "GKP",
+          "selling_price": 4.0,
+          "purchase_price": 4.5,
+          "projected_gain": 26.73,
+          "next_gameweek_gain": 5.64
+        },
+        {
+          "player_out_id": 32,
+          "player_out_name": "Matty Cash",
+          "player_in_id": 10,
+          "player_in_name": "Benjamin White",
+          "position": "DEF",
+          "selling_price": 4.5,
+          "purchase_price": 5.5,
+          "projected_gain": 30.24,
+          "next_gameweek_gain": 5.34
+        },
+        {
+          "player_out_id": 480,
+          "player_out_name": "Morgan Gibbs-White",
+          "player_in_id": 335,
+          "player_in_name": "Anton Stach",
+          "position": "MID",
+          "selling_price": 8.0,
+          "purchase_price": 6.0,
+          "projected_gain": 29.29,
+          "next_gameweek_gain": 6.35
+        },
+        {
+          "player_out_id": 397,
+          "player_out_name": "Antoine Semenyo",
+          "player_in_id": 367,
+          "player_in_name": "Cody Gakpo",
+          "position": "MID",
+          "selling_price": 8.5,
+          "purchase_price": 7.0,
+          "projected_gain": 27.57,
+          "next_gameweek_gain": 5.69
+        },
+        {
+          "player_out_id": 426,
+          "player_out_name": "Bruno Borges Fernandes",
+          "player_in_id": 236,
+          "player_in_name": "Kiernan Dewsbury-Hall",
+          "position": "MID",
+          "selling_price": 12.0,
+          "purchase_price": 6.5,
+          "projected_gain": 25.19,
+          "next_gameweek_gain": 4.56
+        }
+      ]
     }
   ],
   "chip_history": [
@@ -116,6 +185,15 @@
       "adjusted_gain": 0.0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was TRIPLE CAPTAIN at 4.48 adjusted points against a 8.00 threshold."
+    },
+    {
+      "gameweek": 2,
+      "period": "first_half",
+      "decision": "NO CHIP",
+      "projected_gain": 0.0,
+      "adjusted_gain": 0.0,
+      "recommendation_strength": "HOLD",
+      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 200.90 adjusted points against a 18.00 threshold."
     }
   ],
   "lifecycle_history": [
@@ -133,6 +211,13 @@
       "free_transfers_available": 1,
       "bank": 0.0,
       "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 2,
+      "free_transfers_ready": 1,
+      "bank": 7.5,
       "active_chip_period": "first_half"
     }
   ]
