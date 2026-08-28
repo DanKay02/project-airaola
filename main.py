@@ -249,6 +249,13 @@ def deadline_blocks_weekly_cycle(
 ) -> bool:
     """Return whether official season timing should stop analysis."""
 
+    if (
+        intelligence.state_status == STATE_AHEAD
+        and intelligence.saved_gameweek
+        == intelligence.official_next_gameweek
+    ):
+        return False
+
     return intelligence.state_status in {
         STATE_AHEAD,
         ADVANCEMENT_REQUIRED,
