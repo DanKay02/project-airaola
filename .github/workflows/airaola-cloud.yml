@@ -61,7 +61,7 @@ jobs:
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.mode == 'advance'
         run: |
-          python main.py --advance-gameweek
+            printf 'y\n' | python main.py --advance-gameweek
 
       - name: Commit advanced Gameweek state
         if: |
