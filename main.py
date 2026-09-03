@@ -2091,13 +2091,51 @@ def main() -> None:
         )
 
         if transfer_overridden:
+            # Free Hit and Wildcard supersede the ordinary transfer action,
+            # so restore the pre-transfer squad, bank and free-transfer state.
+            # Keep the transfer-history entry, however, because the weekly
+            # lifecycle requires a transfer decision to have been recorded
+            # before the Gameweek can be marked as processed.
+            provisional_transfer_history = copy.deepcopy(
+                manager_state.transfer_history
+            )
+
             manager_state = copy.deepcopy(
                 pre_transfer_state
             )
 
+            manager_state.transfer_history = (
+                provisional_transfer_history
+            )
+
+            if manager_state.transfer_history:
+                latest_transfer_record = (
+                    manager_state.transfer_history[-1]
+                )
+
+                if (
+                    int(
+                        latest_transfer_record.get(
+                            "gameweek",
+                            -1,
+                        )
+                    )
+                    == int(
+                        pre_transfer_state.current_gameweek
+                    )
+                ):
+                    latest_transfer_record[
+                        "superseded_by"
+                    ] = chip_recommendation.decision
+
+                    latest_transfer_record[
+                        "applied_to_squad"
+                    ] = False
+
             transfer_state_message = (
-                "Ordinary transfer decision was superseded "
-                f"by {chip_recommendation.decision}."
+                "Ordinary transfer decision was recorded but "
+                "superseded by "
+                f"{chip_recommendation.decision}."
             )
 
         if should_apply_chip:

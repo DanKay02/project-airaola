@@ -31,6 +31,18 @@ MINIMUM_WILDCARD_SECURE_PLAYERS = 13
 
 MAXIMUM_RECENT_FREE_HIT_GAP = 3
 
+# ---------------------------------------------------------------------------
+# Early-season chip reliability safeguards
+# ---------------------------------------------------------------------------
+# Squad-overhaul chips are especially vulnerable to noisy early-season
+# projections. During GW1-GW5, Airaola may still evaluate them and show their
+# theoretical gains, but they must clear much stronger emergency thresholds
+# before becoming executable.
+EARLY_SEASON_CHIP_GUARD_FINAL_GAMEWEEK = 5
+EARLY_SEASON_FREE_HIT_MINIMUM_GAIN = 25.0
+EARLY_SEASON_WILDCARD_MINIMUM_GAIN = 60.0
+EARLY_SEASON_WILDCARD_MINIMUM_CHANGES = 8
+
 
 @dataclass(frozen=True)
 class SquadChipEvaluation:
@@ -794,16 +806,24 @@ def _evaluate_free_hit(
         + 0.0001
     )
 
+    projected_gain = float(
+        evaluation.next_gameweek_gain
+    )
+
+    early_season_guard = (
+        current_gameweek
+        <= EARLY_SEASON_CHIP_GUARD_FINAL_GAMEWEEK
+        and projected_gain
+        < EARLY_SEASON_FREE_HIT_MINIMUM_GAIN
+    )
+
     eligible = (
         available
         and evaluation.optimisation_succeeded
         and secure_enough
         and affordable
         and not recent_free_hit_block
-    )
-
-    projected_gain = float(
-        evaluation.next_gameweek_gain
+        and not early_season_guard
     )
 
     pressure = (
@@ -844,6 +864,14 @@ def _evaluate_free_hit(
             "The temporary squad contains only "
             f"{evaluation.secure_player_count} secure "
             "starters, below Airaola's requirement."
+        )
+    elif early_season_guard:
+        reason = (
+            "Early-season Free Hit protection is active. "
+            f"Gameweek {current_gameweek} requires at least "
+            f"{EARLY_SEASON_FREE_HIT_MINIMUM_GAIN:.2f} "
+            "projected points of one-Gameweek improvement "
+            "before Airaola may spend the chip."
         )
     else:
         reason = (
@@ -937,16 +965,40 @@ def _evaluate_wildcard(
         + 0.0001
     )
 
+    projected_gain = float(
+        evaluation.projected_gain
+    )
+
+    early_season = (
+        current_gameweek
+        <= EARLY_SEASON_CHIP_GUARD_FINAL_GAMEWEEK
+    )
+
+    early_season_gain_enough = (
+        projected_gain
+        >= EARLY_SEASON_WILDCARD_MINIMUM_GAIN
+    )
+
+    early_season_rebuild_large_enough = (
+        evaluation.changed_player_count
+        >= EARLY_SEASON_WILDCARD_MINIMUM_CHANGES
+    )
+
+    early_season_guard = (
+        early_season
+        and not (
+            early_season_gain_enough
+            and early_season_rebuild_large_enough
+        )
+    )
+
     eligible = (
         available
         and evaluation.optimisation_succeeded
         and secure_enough
         and meaningful_rebuild
         and affordable
-    )
-
-    projected_gain = float(
-        evaluation.projected_gain
+        and not early_season_guard
     )
 
     pressure = (
@@ -989,6 +1041,16 @@ def _evaluate_wildcard(
             "The proposed squad contains only "
             f"{evaluation.secure_player_count} secure "
             "players, below Airaola's requirement."
+        )
+    elif early_season_guard:
+        reason = (
+            "Early-season Wildcard protection is active. "
+            f"Gameweek {current_gameweek} requires at least "
+            f"{EARLY_SEASON_WILDCARD_MINIMUM_GAIN:.2f} "
+            "projected long-horizon gain and at least "
+            f"{EARLY_SEASON_WILDCARD_MINIMUM_CHANGES} "
+            "permanent changes before Airaola may spend "
+            "the Wildcard."
         )
     else:
         reason = (
