@@ -1,0 +1,78 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 3 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 3, 2026-09-04 18:30 BST
+Hours remaining: 22.50
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £92.5m
+Current market value: £92.5m
+Official selling value: £92.3m
+Money in bank: £7.5m
+Available budget: £99.8m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: EXCEPTIONAL
+Gross projected gain: +31.69
+Net strategic gain: +26.94
+Hit cost: 4.00
+Reason: The 2-transfer plan adds 31.69 projected points before strategic costs and 26.94 points after them. Its complexity-adjusted execution threshold is 3.00. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Tyrick Mitchell (£4.5m) and buy Riccardo Calafiori (£5.6m).
+- Sell Harry Wilson (£6.4m) and buy Bruno Borges Fernandes (£12.0m).
+- This plan includes a 4-point hit.
+
+STARTING XI
+Formation: 4-5-1
+- GKP: Konstantinos Tzolakis (Hull City) | 4.97 pts
+- DEF: Riccardo Calafiori (Arsenal) | 5.31 pts
+- DEF: Marc Guéhi (Man City) [VC] | 5.24 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 5.17 pts
+- DEF: Benjamin White (Arsenal) | 4.78 pts
+- MID: Bruno Borges Fernandes (Man Utd) [C] | 6.35 pts
+- MID: Cody Gakpo (Liverpool) | 4.88 pts
+- MID: Anton Stach (Leeds) | 4.87 pts
+- MID: Kiernan Dewsbury-Hall (Everton) | 4.49 pts
+- MID: Dominik Szoboszlai (Liverpool) | 4.41 pts
+- FWD: João Pedro Junqueira de Jesus (Chelsea) | 4.64 pts
+
+Captain: Bruno Borges Fernandes (6.35 pts)
+Vice-captain: Marc Guéhi (5.24 pts)
+Projected XI points before captaincy: 55.11
+Projected team total with captaincy: 61.46
+
+BENCH
+- 1. Dominic Calvert-Lewin (Leeds, FWD) | 3.84 pts
+- 2. Richarlison de Andrade (Spurs, FWD) | 3.61 pts
+- 3. Marcos Senesi Barón (Spurs, DEF) | 2.65 pts
+- 4. Gianluigi Donnarumma (Man City, GKP) | 3.44 pts
+Projected bench points: 13.54
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 46.89 adjusted points against a 18.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Bruno Borges Fernandes.
+- Set vice-captain to Marc Guéhi.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.

@@ -1,8 +1,8 @@
 {
   "current_gameweek": 3,
   "free_transfers": 1,
-  "bank": 7.5,
-  "last_processed_gameweek": 2,
+  "bank": 0.8,
+  "last_processed_gameweek": 3,
   "squad": [
     {
       "player_id": 4,
@@ -11,14 +11,6 @@
     {
       "player_id": 165,
       "purchase_price": 7.5
-    },
-    {
-      "player_id": 204,
-      "purchase_price": 4.5
-    },
-    {
-      "player_id": 260,
-      "purchase_price": 6.5
     },
     {
       "player_id": 346,
@@ -63,6 +55,14 @@
     {
       "player_id": 236,
       "purchase_price": 6.5
+    },
+    {
+      "player_id": 8,
+      "purchase_price": 5.6
+    },
+    {
+      "player_id": 426,
+      "purchase_price": 12.0
     }
   ],
   "chips": {
@@ -174,6 +174,42 @@
           "next_gameweek_gain": 4.56
         }
       ]
+    },
+    {
+      "gameweek": 3,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 2,
+      "hit_cost": 4.0,
+      "gross_projected_gain": 31.69,
+      "net_strategic_gain": 26.94,
+      "bank_before": 7.5,
+      "bank_after": 0.8,
+      "moves": [
+        {
+          "player_out_id": 204,
+          "player_out_name": "Tyrick Mitchell",
+          "player_in_id": 8,
+          "player_in_name": "Riccardo Calafiori",
+          "position": "DEF",
+          "selling_price": 4.5,
+          "purchase_price": 5.6,
+          "projected_gain": 15.07,
+          "next_gameweek_gain": 2.91
+        },
+        {
+          "player_out_id": 260,
+          "player_out_name": "Harry Wilson",
+          "player_in_id": 426,
+          "player_in_name": "Bruno Borges Fernandes",
+          "position": "MID",
+          "selling_price": 6.4,
+          "purchase_price": 12.0,
+          "projected_gain": 16.62,
+          "next_gameweek_gain": 3.27
+        }
+      ]
     }
   ],
   "chip_history": [
@@ -194,6 +230,15 @@
       "adjusted_gain": 0.0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 200.90 adjusted points against a 18.00 threshold."
+    },
+    {
+      "gameweek": 3,
+      "period": "first_half",
+      "decision": "NO CHIP",
+      "projected_gain": 0.0,
+      "adjusted_gain": 0.0,
+      "recommendation_strength": "HOLD",
+      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 46.89 adjusted points against a 18.00 threshold."
     }
   ],
   "lifecycle_history": [
@@ -227,6 +272,13 @@
       "free_transfers_available": 1,
       "bank": 7.5,
       "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 3,
+      "free_transfers_ready": 1,
+      "bank": 0.8,
       "active_chip_period": "first_half"
     }
   ]
