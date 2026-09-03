@@ -11,6 +11,7 @@ on:
         options:
           - autonomous
           - dry-run
+          - advance
 
   schedule:
     - cron: "17 0,6,12,18 * * *"
@@ -54,6 +55,38 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           python -m pytest -q
+
+      - name: Advance Gameweek
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.mode == 'advance'
+        run: |
+          python main.py --advance-gameweek
+
+      - name: Commit advanced Gameweek state
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.mode == 'advance'
+        run: |
+          git config user.name "Project Airaola"
+          git config user.email "airaola@users.noreply.github.com"
+
+          git add data/state/manager_state.json
+
+          if git diff --cached --quiet; then
+            echo "No Gameweek state change to commit."
+            exit 0
+          fi
+
+          git commit -m "Airaola: advance Gameweek"
+
+          echo "Removing temporary runner-generated changes..."
+          git restore --worktree .
+          git clean -fd
+
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Run autonomous manager
         if: |
