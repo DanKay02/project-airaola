@@ -21,6 +21,46 @@ MAX_STARTERS_BY_POSITION = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Captaincy reliability policy
+# ---------------------------------------------------------------------------
+# Raw projected points remain the strongest signal, but captaincy receives
+# additional risk controls because doubling the wrong player's score is more
+# costly than simply starting the wrong player.
+#
+# Attackers receive a modest preference because their FPL upside is generally
+# less dependent on a clean sheet surviving for 60+ minutes. Defenders remain
+# fully eligible and can still win captaincy when their projection advantage is
+# genuinely strong. Goalkeepers are heavily discouraged but not hard-blocked.
+CAPTAIN_POSITION_MULTIPLIER = {
+    "GKP": 0.78,
+    "DEF": 0.93,
+    "MID": 1.05,
+    "FWD": 1.03,
+}
+
+VICE_CAPTAIN_POSITION_MULTIPLIER = {
+    "GKP": 0.82,
+    "DEF": 0.96,
+    "MID": 1.03,
+    "FWD": 1.02,
+}
+
+# Minutes security matters more for captaincy than for ordinary XI selection.
+CAPTAIN_MINUTES_SECURITY_POWER = 1.35
+VICE_CAPTAIN_MINUTES_SECURITY_POWER = 1.15
+
+# Previous-season reliability is used only as a small confidence modifier.
+# The selector remains backwards-compatible when these columns are absent.
+CAPTAIN_PRIOR_RELIABILITY_BONUS = 0.08
+CAPTAIN_CURRENT_SEASON_EVIDENCE_BONUS = 0.04
+
+# A defender or goalkeeper may still be captain, but only if their raw
+# projection is sufficiently better than the strongest MID/FWD alternative.
+DEFENDER_CAPTAIN_ADVANTAGE_REQUIRED = 0.75
+GOALKEEPER_CAPTAIN_ADVANTAGE_REQUIRED = 1.50
+
+
 def validate_squad_for_lineup(
     squad: pd.DataFrame,
 ) -> None:
@@ -53,6 +93,26 @@ def validate_squad_for_lineup(
             "Starting-lineup selection requires a "
             "complete 15-player squad."
         )
+
+
+def _safe_numeric(
+    dataframe: pd.DataFrame,
+    column: str,
+    default: float = 0.0,
+) -> pd.Series:
+    """Return a safe numeric series without mutating the caller."""
+
+    if column not in dataframe.columns:
+        return pd.Series(
+            default,
+            index=dataframe.index,
+            dtype=float,
+        )
+
+    return pd.to_numeric(
+        dataframe[column],
+        errors="coerce",
+    ).fillna(default)
 
 
 def prepare_lineup_pool(
@@ -185,45 +245,233 @@ def select_starting_xi(
     return starting_xi.reset_index(drop=True)
 
 
-def select_captains(
+def _build_captain_scores(
     starting_xi: pd.DataFrame,
-) -> tuple[int, int]:
-    """Select next-Gameweek captain and vice-captain."""
+) -> pd.DataFrame:
+    """
+    Build risk-adjusted captain and vice-captain scores.
+
+    Raw next-Gameweek projection stays dominant. Minutes security, position
+    and projection reliability act as confidence modifiers rather than
+    replacing the underlying points forecast.
+    """
 
     candidates = starting_xi.copy()
 
-    candidates["captain_score"] = (
-        candidates[
-            "next_gameweek_projected_points"
-        ]
-        * candidates["minutes_security"]
+    projected_points = _safe_numeric(
+        candidates,
+        "next_gameweek_projected_points",
     )
 
-    candidates = candidates.sort_values(
+    minutes_security = _safe_numeric(
+        candidates,
+        "minutes_security",
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+    prior_reliability = _safe_numeric(
+        candidates,
+        "prior_reliability",
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+    current_season_weight = _safe_numeric(
+        candidates,
+        "current_season_weight",
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+    captain_position_multiplier = (
+        candidates["position"]
+        .astype(str)
+        .map(CAPTAIN_POSITION_MULTIPLIER)
+        .fillna(1.0)
+        .astype(float)
+    )
+
+    vice_position_multiplier = (
+        candidates["position"]
+        .astype(str)
+        .map(VICE_CAPTAIN_POSITION_MULTIPLIER)
+        .fillna(1.0)
+        .astype(float)
+    )
+
+    reliability_multiplier = (
+        1.0
+        + prior_reliability
+        * CAPTAIN_PRIOR_RELIABILITY_BONUS
+        + current_season_weight
+        * CAPTAIN_CURRENT_SEASON_EVIDENCE_BONUS
+    )
+
+    candidates["captain_score"] = (
+        projected_points
+        * (
+            minutes_security
+            ** CAPTAIN_MINUTES_SECURITY_POWER
+        )
+        * captain_position_multiplier
+        * reliability_multiplier
+    )
+
+    candidates["vice_captain_score"] = (
+        projected_points
+        * (
+            minutes_security
+            ** VICE_CAPTAIN_MINUTES_SECURITY_POWER
+        )
+        * vice_position_multiplier
+        * reliability_multiplier
+    )
+
+    return candidates
+
+
+def _apply_position_captain_guard(
+    candidates: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Stop tiny projection differences from automatically captaining DEF/GKP.
+
+    Defenders and goalkeepers remain eligible when their raw projection clears
+    the strongest attacking alternative by a meaningful margin.
+    """
+
+    guarded = candidates.copy()
+
+    attacking = guarded[
+        guarded["position"].isin(
+            [
+                "MID",
+                "FWD",
+            ]
+        )
+    ]
+
+    if attacking.empty:
+        return guarded
+
+    best_attacking_projection = float(
+        attacking[
+            "next_gameweek_projected_points"
+        ].max()
+    )
+
+    defender_mask = (
+        guarded["position"] == "DEF"
+    )
+
+    goalkeeper_mask = (
+        guarded["position"] == "GKP"
+    )
+
+    defender_allowed = (
+        guarded[
+            "next_gameweek_projected_points"
+        ]
+        >= (
+            best_attacking_projection
+            + DEFENDER_CAPTAIN_ADVANTAGE_REQUIRED
+        )
+    )
+
+    goalkeeper_allowed = (
+        guarded[
+            "next_gameweek_projected_points"
+        ]
+        >= (
+            best_attacking_projection
+            + GOALKEEPER_CAPTAIN_ADVANTAGE_REQUIRED
+        )
+    )
+
+    guarded.loc[
+        defender_mask & ~defender_allowed,
+        "captain_score",
+    ] *= 0.80
+
+    guarded.loc[
+        goalkeeper_mask & ~goalkeeper_allowed,
+        "captain_score",
+    ] *= 0.60
+
+    return guarded
+
+
+def select_captains(
+    starting_xi: pd.DataFrame,
+) -> tuple[int, int]:
+    """
+    Select next-Gameweek captain and vice-captain.
+
+    Captaincy uses a risk-adjusted score rather than raw projected points
+    alone. MID/FWD players receive a modest upside preference, while DEF/GKP
+    must show a clear projection advantage to overcome their lower captaincy
+    multiplier.
+    """
+
+    if len(starting_xi) < 2:
+        raise ValueError(
+            "At least two starters are required "
+            "for captain selection."
+        )
+
+    candidates = _build_captain_scores(
+        starting_xi
+    )
+
+    candidates = _apply_position_captain_guard(
+        candidates
+    )
+
+    captain_ranking = candidates.sort_values(
         by=[
             "captain_score",
             "next_gameweek_projected_points",
+            "minutes_security",
             "next_gameweek_expected_minutes",
         ],
         ascending=[
             False,
             False,
             False,
+            False,
         ],
     )
 
-    if len(candidates) < 2:
-        raise ValueError(
-            "At least two starters are required "
-            "for captain selection."
-        )
-
     captain_id = int(
-        candidates.iloc[0]["id"]
+        captain_ranking.iloc[0]["id"]
+    )
+
+    vice_candidates = candidates[
+        candidates["id"].astype(int)
+        != captain_id
+    ].copy()
+
+    vice_ranking = vice_candidates.sort_values(
+        by=[
+            "vice_captain_score",
+            "next_gameweek_projected_points",
+            "minutes_security",
+            "next_gameweek_expected_minutes",
+        ],
+        ascending=[
+            False,
+            False,
+            False,
+            False,
+        ],
     )
 
     vice_captain_id = int(
-        candidates.iloc[1]["id"]
+        vice_ranking.iloc[0]["id"]
     )
 
     return captain_id, vice_captain_id

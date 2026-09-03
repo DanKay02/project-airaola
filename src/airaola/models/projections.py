@@ -33,6 +33,40 @@ CLEAN_SHEET_POINTS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Reliability hardening
+# ---------------------------------------------------------------------------
+# Early in a season, current-season FPL returns are extremely noisy. Airaola
+# therefore anchors player performance to a previous-season prior where one is
+# available, while gradually allowing the current season to take over.
+#
+# Current-season minutes are deliberately given a small 1.25x bias so that
+# genuinely new information matters, without letting one or two hauls rewrite
+# the entire projection model.
+CURRENT_SEASON_EVIDENCE_MULTIPLIER = 1.25
+CURRENT_SEASON_PRIOR_MINUTES = 600.0
+PRIOR_SEASON_RELIABILITY_MINUTES = 900.0
+
+POSITION_BASELINE_POINTS = {
+    "GKP": 3.2,
+    "DEF": 3.2,
+    "MID": 3.8,
+    "FWD": 3.8,
+}
+
+# Used only when evidence about a player's future minutes is still scarce.
+# The prior is intentionally fairly generous: two early Gameweeks should not
+# make every regular starter look like a 55-minute player.
+POSITION_MINUTES_SECURITY_PRIOR = {
+    "GKP": 0.90,
+    "DEF": 0.82,
+    "MID": 0.82,
+    "FWD": 0.82,
+}
+
+MINUTES_SECURITY_EVIDENCE_STARTS = 6.0
+
+
 def numeric_series(
     dataframe: pd.DataFrame,
     column: str,
@@ -207,7 +241,13 @@ def calculate_sample_confidence(
 def calculate_minutes_security(
     players: pd.DataFrame,
 ) -> pd.Series:
-    """Estimate future minutes security."""
+    """
+    Estimate future minutes security.
+
+    Current starts and involvement remain the main evidence, but tiny early-
+    season samples are shrunk toward a sensible positional prior rather than
+    multiplying every player's security down toward zero.
+    """
 
     start_security = calculate_start_security(
         players
@@ -217,8 +257,9 @@ def calculate_minutes_security(
         players
     )
 
-    sample_confidence = calculate_sample_confidence(
-        players
+    starts = numeric_series(
+        players,
+        "starts",
     )
 
     outfield_security = (
@@ -233,26 +274,45 @@ def calculate_minutes_security(
 
     positions = players["position"].astype(str)
 
-    base_security = np.where(
-        positions == "GKP",
-        goalkeeper_security,
-        outfield_security,
-    )
-
-    base_security = pd.Series(
-        base_security,
+    observed_security = pd.Series(
+        np.where(
+            positions == "GKP",
+            goalkeeper_security,
+            outfield_security,
+        ),
         index=players.index,
         dtype=float,
+    ).clip(
+        lower=0.0,
+        upper=1.0,
     )
 
-    confidence_multiplier = (
-        0.40
-        + sample_confidence * 0.60
+    prior_security = (
+        positions
+        .map(POSITION_MINUTES_SECURITY_PRIOR)
+        .fillna(0.80)
+        .astype(float)
     )
 
-    return (
-        base_security
-        * confidence_multiplier
+    evidence_weight = np.sqrt(
+        starts.clip(lower=0.0)
+        / MINUTES_SECURITY_EVIDENCE_STARTS
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+    security = (
+        prior_security
+        * (1.0 - evidence_weight)
+        + observed_security
+        * evidence_weight
+    )
+
+    return pd.Series(
+        security,
+        index=players.index,
+        dtype=float,
     ).clip(
         lower=0.0,
         upper=1.0,
@@ -382,6 +442,168 @@ def calculate_position_score(
         lower=0.0,
         upper=12.0,
     )
+
+
+
+def calculate_prior_points_per_90(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """Calculate previous-season FPL points per 90 minutes."""
+
+    prior_points = numeric_series(
+        players,
+        "prior_total_points",
+    )
+
+    prior_minutes = numeric_series(
+        players,
+        "prior_minutes",
+    )
+
+    values = np.where(
+        prior_minutes >= 90,
+        prior_points / prior_minutes * 90,
+        np.nan,
+    )
+
+    return pd.Series(
+        values,
+        index=players.index,
+        dtype=float,
+    ).clip(
+        lower=0.0,
+        upper=12.0,
+    )
+
+
+def calculate_previous_season_prior(
+    players: pd.DataFrame,
+) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """
+    Build a stable prior from previous-season FPL performance.
+
+    Returns:
+    - prior points per fixture
+    - prior reliability
+    - whether usable prior history exists
+
+    Players with little or no previous-season evidence are shrunk heavily
+    toward a positional baseline.
+    """
+
+    positions = players["position"].astype(str)
+
+    position_baseline = (
+        positions
+        .map(POSITION_BASELINE_POINTS)
+        .fillna(3.5)
+        .astype(float)
+    )
+
+    prior_minutes = numeric_series(
+        players,
+        "prior_minutes",
+    )
+
+    prior_points_per_90 = (
+        calculate_prior_points_per_90(
+            players
+        )
+    )
+
+    if "prior_history_available" in players.columns:
+        prior_available = (
+            players["prior_history_available"]
+            .fillna(False)
+            .astype(bool)
+        )
+    else:
+        prior_available = pd.Series(
+            False,
+            index=players.index,
+            dtype=bool,
+        )
+
+    usable_prior = (
+        prior_available
+        & prior_minutes.ge(90)
+        & prior_points_per_90.notna()
+    )
+
+    prior_reliability = (
+        prior_minutes.clip(lower=0.0)
+        / (
+            prior_minutes.clip(lower=0.0)
+            + PRIOR_SEASON_RELIABILITY_MINUTES
+        )
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
+    prior_reliability = (
+        prior_reliability
+        * usable_prior.astype(float)
+    )
+
+    previous_season_prior = (
+        position_baseline
+        * (1.0 - prior_reliability)
+        + prior_points_per_90.fillna(
+            position_baseline
+        )
+        * prior_reliability
+    )
+
+    return (
+        previous_season_prior.clip(
+            lower=1.0,
+            upper=8.0,
+        ),
+        prior_reliability,
+        usable_prior,
+    )
+
+
+def calculate_current_season_weight(
+    players: pd.DataFrame,
+) -> pd.Series:
+    """
+    Return how much current-season evidence should influence projections.
+
+    At 180 current-season minutes the weight is still deliberately modest.
+    As the season matures, current evidence gradually becomes dominant.
+    """
+
+    current_minutes = numeric_series(
+        players,
+        "minutes",
+    ).clip(
+        lower=0.0,
+    )
+
+    effective_minutes = (
+        current_minutes
+        * CURRENT_SEASON_EVIDENCE_MULTIPLIER
+    )
+
+    weight = (
+        effective_minutes
+        / (
+            effective_minutes
+            + CURRENT_SEASON_PRIOR_MINUTES
+        )
+    )
+
+    return pd.Series(
+        weight,
+        index=players.index,
+        dtype=float,
+    ).clip(
+        lower=0.0,
+        upper=1.0,
+    )
+
 
 
 def calculate_fixture_multiplier(
@@ -693,6 +915,48 @@ def build_player_projections(
         projected
     )
 
+    position_baseline = (
+        projected["position"]
+        .astype(str)
+        .map(POSITION_BASELINE_POINTS)
+        .fillna(3.5)
+        .astype(float)
+    )
+
+    observed_points_per_fixture = (
+        form * 0.25
+        + points_per_game * 0.25
+        + points_per_90 * 0.25
+        + position_score * 0.25
+    ).clip(
+        lower=0.0,
+        upper=10.0,
+    )
+
+    (
+        previous_season_prior,
+        prior_reliability,
+        prior_history_used,
+    ) = calculate_previous_season_prior(
+        projected
+    )
+
+    current_season_weight = (
+        calculate_current_season_weight(
+            projected
+        )
+    )
+
+    raw_points_per_fixture = (
+        previous_season_prior
+        * (1.0 - current_season_weight)
+        + observed_points_per_fixture
+        * current_season_weight
+    ).clip(
+        lower=1.0,
+        upper=8.0,
+    )
+
     availability = (
         calculate_availability_probability(
             projected
@@ -705,13 +969,6 @@ def build_player_projections(
 
     minutes_security = calculate_minutes_security(
         projected
-    )
-
-    raw_points_per_fixture = (
-        form * 0.35
-        + points_per_game * 0.25
-        + points_per_90 * 0.20
-        + position_score * 0.20
     )
 
     projected["availability_probability"] = (
@@ -732,6 +989,30 @@ def build_player_projections(
 
     projected["position_score"] = (
         position_score.round(2)
+    )
+
+    projected["position_baseline"] = (
+        position_baseline.round(2)
+    )
+
+    projected["observed_points_per_fixture"] = (
+        observed_points_per_fixture.round(3)
+    )
+
+    projected["previous_season_prior"] = (
+        previous_season_prior.round(3)
+    )
+
+    projected["prior_reliability"] = (
+        prior_reliability.round(3)
+    )
+
+    projected["prior_history_used"] = (
+        prior_history_used.astype(bool)
+    )
+
+    projected["current_season_weight"] = (
+        current_season_weight.round(3)
     )
 
     projected["baseline_points_per_fixture"] = (

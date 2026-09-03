@@ -21,6 +21,29 @@ BANKED_TRANSFER_VALUE = 0.75
 MINIMUM_NET_STRATEGIC_GAIN = 1.5
 MINIMUM_MINUTES_SECURITY = 0.35
 
+# ---------------------------------------------------------------------------
+# Reliability hardening
+# ---------------------------------------------------------------------------
+# Airaola should be reluctant to take points hits, especially while the
+# current-season sample is still tiny. During GW1-GW5, at most one hit is
+# considered. Free transfers can still be spent normally.
+EARLY_SEASON_FINAL_GAMEWEEK = 5
+EARLY_SEASON_MAX_HIT_TRANSFERS = 1
+
+# A hit must be supported by a meaningful five-Gameweek improvement for the
+# marginal player being changed. These are deliberately stronger than the
+# official four-point hit because projections carry uncertainty.
+HIT_TRANSFER_MINIMUM_GAINS = (
+    6.0,
+    9.0,
+    12.0,
+    15.0,
+)
+
+# Multi-transfer plans must clear a higher strategic bar even when the
+# individual moves pass their own hit checks.
+ADDITIONAL_TRANSFER_EXECUTION_BUFFER = 1.5
+
 POSITION_REQUIREMENTS = {
     "GKP": 2,
     "DEF": 5,
@@ -780,6 +803,132 @@ def _transfer_bank_cost(
     )
 
 
+
+def _infer_active_gameweek(
+    player_pool: pd.DataFrame,
+) -> int | None:
+    """
+    Infer the Gameweek being planned from projection data.
+
+    The projection pipeline supplies `next_gameweek`. Returning None keeps
+    the planner backwards-compatible with synthetic tests that omit it.
+    """
+
+    if "next_gameweek" not in player_pool.columns:
+        return None
+
+    gameweeks = pd.to_numeric(
+        player_pool["next_gameweek"],
+        errors="coerce",
+    ).dropna()
+
+    if gameweeks.empty:
+        return None
+
+    return int(
+        gameweeks.min()
+    )
+
+
+def _maximum_transfers_for_gameweek(
+    free_transfers_available: int,
+    active_gameweek: int | None,
+) -> int:
+    """
+    Return the maximum transfer count Airaola may consider.
+
+    During the first five Gameweeks, Airaola may take at most one points hit.
+    This prevents tiny early-season samples from causing a squad rebuild.
+    """
+
+    if (
+        active_gameweek is not None
+        and active_gameweek
+        <= EARLY_SEASON_FINAL_GAMEWEEK
+    ):
+        return min(
+            MAX_TRANSFERS_CONSIDERED,
+            free_transfers_available
+            + EARLY_SEASON_MAX_HIT_TRANSFERS,
+        )
+
+    return MAX_TRANSFERS_CONSIDERED
+
+
+def _hit_moves_clear_thresholds(
+    moves: tuple[TransferMove, ...],
+    free_transfers_available: int,
+) -> bool:
+    """
+    Require every marginal hit transfer to justify its uncertainty.
+
+    The strongest projected moves are treated as consuming free transfers.
+    Remaining weaker moves are the marginal hit transfers and must clear
+    increasingly demanding five-Gameweek gain thresholds.
+    """
+
+    hit_count = max(
+        len(moves)
+        - free_transfers_available,
+        0,
+    )
+
+    if hit_count == 0:
+        return True
+
+    gains_descending = sorted(
+        (
+            float(move.projected_gain)
+            for move in moves
+        ),
+        reverse=True,
+    )
+
+    marginal_hit_gains = gains_descending[
+        free_transfers_available:
+    ]
+
+    for hit_index, gain in enumerate(
+        marginal_hit_gains
+    ):
+        threshold_index = min(
+            hit_index,
+            len(HIT_TRANSFER_MINIMUM_GAINS) - 1,
+        )
+
+        required_gain = (
+            HIT_TRANSFER_MINIMUM_GAINS[
+                threshold_index
+            ]
+        )
+
+        if gain < required_gain:
+            return False
+
+    return True
+
+
+def _plan_execution_threshold(
+    minimum_net_gain: float,
+    transfers_used: int,
+) -> float:
+    """
+    Raise the strategic execution threshold as a plan becomes more complex.
+    """
+
+    additional_moves = max(
+        transfers_used - 1,
+        0,
+    )
+
+    return (
+        float(minimum_net_gain)
+        + additional_moves
+        * ADDITIONAL_TRANSFER_EXECUTION_BUFFER
+    )
+
+
+
 def _recommendation_strength(
     net_gain: float,
 ) -> str:
@@ -981,9 +1130,22 @@ def recommend_transfer_strategy(
 
     best_plan: TransferPlan | None = None
 
+    active_gameweek = _infer_active_gameweek(
+        pool
+    )
+
+    maximum_transfers = (
+        _maximum_transfers_for_gameweek(
+            free_transfers_available=(
+                free_transfers_available
+            ),
+            active_gameweek=active_gameweek,
+        )
+    )
+
     for transfer_count in range(
         1,
-        MAX_TRANSFERS_CONSIDERED + 1,
+        maximum_transfers + 1,
     ):
         proposed_squad = (
             _solve_exact_transfer_count(
@@ -1050,6 +1212,21 @@ def recommend_transfer_strategy(
             proposed_squad=proposed_squad,
         )
 
+        if not _hit_moves_clear_thresholds(
+            moves=moves,
+            free_transfers_available=(
+                free_transfers_available
+            ),
+        ):
+            continue
+
+        execution_threshold = (
+            _plan_execution_threshold(
+                minimum_net_gain=minimum_net_gain,
+                transfers_used=transfer_count,
+            )
+        )
+
         bank_after = (
             calculate_transfer_bank_after(
                 bank_before=bank_before,
@@ -1097,7 +1274,7 @@ def recommend_transfer_strategy(
                 2,
             ),
             execution_threshold=round(
-                minimum_net_gain,
+                execution_threshold,
                 2,
             ),
             bank_before=bank_before,
@@ -1123,24 +1300,48 @@ def recommend_transfer_strategy(
                 f"adds {gross_gain:.2f} projected "
                 "points before strategic costs and "
                 f"{net_gain:.2f} points after them. "
-                "Official selling prices were used "
-                "for every outgoing player."
+                f"Its complexity-adjusted execution "
+                f"threshold is {execution_threshold:.2f}. "
+                "Hit transfers must also clear Airaola's "
+                "marginal-gain safeguards. Official selling "
+                "prices were used for every outgoing player."
             ),
+        )
+
+        plan_clears_threshold = (
+            plan.net_strategic_gain
+            >= plan.execution_threshold
         )
 
         if best_plan is None:
             best_plan = plan
             continue
 
+        best_clears_threshold = (
+            best_plan.net_strategic_gain
+            >= best_plan.execution_threshold
+        )
+
         if (
-            plan.net_strategic_gain
+            plan_clears_threshold
+            and not best_clears_threshold
+        ):
+            best_plan = plan
+            continue
+
+        if (
+            plan_clears_threshold
+            == best_clears_threshold
+            and plan.net_strategic_gain
             > best_plan.net_strategic_gain
         ):
             best_plan = plan
             continue
 
         if (
-            plan.net_strategic_gain
+            plan_clears_threshold
+            == best_clears_threshold
+            and plan.net_strategic_gain
             == best_plan.net_strategic_gain
             and plan.transfers_used
             < best_plan.transfers_used
@@ -1150,7 +1351,7 @@ def recommend_transfer_strategy(
     if (
         best_plan is None
         or best_plan.net_strategic_gain
-        < minimum_net_gain
+        < best_plan.execution_threshold
     ):
         return _build_hold_plan(
             free_transfers_available=(
