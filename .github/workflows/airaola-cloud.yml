@@ -14,7 +14,7 @@ on:
           - advance
 
   schedule:
-    - cron: "17 0,6,12,18 * * *"
+    - cron: "09 0,6,12,16 * * *"
       timezone: "Europe/London"
 
 permissions:
