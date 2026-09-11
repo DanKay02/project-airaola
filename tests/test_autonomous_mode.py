@@ -61,19 +61,24 @@ def build_intelligence(
     *,
     state_status: str,
     hours_until_deadline: float | None,
+    official_next_gameweek: int | None = None,
 ) -> SimpleNamespace:
-    """Build the deadline fields consumed by the safety gate."""
+    """Build deadline fields consumed by autonomous helpers."""
 
     return SimpleNamespace(
         state_status=state_status,
         hours_until_deadline=hours_until_deadline,
+        official_next_gameweek=official_next_gameweek,
     )
 
 
-def test_non_autonomous_run_bypasses_gate(main_module):
+def test_non_autonomous_run_bypasses_gate(
+    main_module,
+):
     arguments = build_arguments(
         autonomous=False,
     )
+
     intelligence = build_intelligence(
         state_status=main_module.SEASON_NOT_STARTED,
         hours_until_deadline=400.0,
@@ -92,6 +97,7 @@ def test_autonomous_run_is_blocked_during_preseason(
     arguments = build_arguments(
         autonomous=True,
     )
+
     intelligence = build_intelligence(
         state_status=main_module.SEASON_NOT_STARTED,
         hours_until_deadline=400.0,
@@ -106,7 +112,7 @@ def test_autonomous_run_is_blocked_during_preseason(
 
     assert not allowed
     assert "Status: BLOCKED" in output
-    assert "final 24 hours before the deadline" in output
+    assert "inside the final 24 hours" in output
 
 
 def test_autonomous_run_is_blocked_without_deadline(
@@ -116,6 +122,7 @@ def test_autonomous_run_is_blocked_without_deadline(
     arguments = build_arguments(
         autonomous=True,
     )
+
     intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=None,
@@ -139,6 +146,7 @@ def test_autonomous_run_is_blocked_after_deadline(
     arguments = build_arguments(
         autonomous=True,
     )
+
     intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=0.0,
@@ -162,6 +170,7 @@ def test_autonomous_run_is_blocked_before_final_window(
     arguments = build_arguments(
         autonomous=True,
     )
+
     intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=24.01,
@@ -195,6 +204,7 @@ def test_autonomous_run_is_allowed_inside_final_window(
     arguments = build_arguments(
         autonomous=True,
     )
+
     intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=hours_remaining,
@@ -221,7 +231,10 @@ def test_autonomous_confirmation_approves_without_input(
         autonomous=True,
     )
 
-    def fail_if_input_is_requested(*args, **kwargs):
+    def fail_if_input_is_requested(
+        *args,
+        **kwargs,
+    ):
         raise AssertionError(
             "Autonomous mode requested interactive input."
         )
@@ -315,12 +328,15 @@ def test_autonomous_sync_is_noop_for_non_autonomous_run(
     arguments = build_arguments(
         autonomous=False,
     )
+
     state = SimpleNamespace(
         current_gameweek=1,
     )
+
     intelligence = build_intelligence(
         state_status=main_module.ADVANCEMENT_REQUIRED,
         hours_until_deadline=6.0,
+        official_next_gameweek=2,
     )
 
     returned_state, returned_intelligence, synced = (
@@ -337,18 +353,66 @@ def test_autonomous_sync_is_noop_for_non_autonomous_run(
     assert not synced
 
 
-def test_autonomous_sync_does_not_advance_aligned_state(
+def test_autonomous_sync_does_not_advance_aligned_open_state(
     main_module,
+    monkeypatch,
 ):
     arguments = build_arguments(
         autonomous=True,
     )
+
     state = SimpleNamespace(
         current_gameweek=1,
     )
+
     intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=6.0,
+        official_next_gameweek=2,
+    )
+
+    monkeypatch.setattr(
+        main_module,
+        "gameweek_is_processed",
+        lambda *_args, **_kwargs: False,
+    )
+
+    returned_state, returned_intelligence, synced = (
+        main_module.autonomous_sync_gameweek_state(
+            arguments=arguments,
+            intelligence=intelligence,
+            manager_state=state,
+            bootstrap_data={},
+        )
+    )
+
+    assert returned_state is state
+    assert returned_intelligence is intelligence
+    assert not synced
+
+
+def test_autonomous_sync_does_not_advance_aligned_without_next_gameweek(
+    main_module,
+    monkeypatch,
+):
+    arguments = build_arguments(
+        autonomous=True,
+    )
+
+    state = SimpleNamespace(
+        current_gameweek=1,
+    )
+
+    intelligence = build_intelligence(
+        state_status="ALIGNED",
+        hours_until_deadline=6.0,
+        official_next_gameweek=None,
+    )
+
+    monkeypatch.setattr(
+        main_module,
+        "gameweek_is_processed",
+        lambda *_args, **_kwargs: True,
     )
 
     returned_state, returned_intelligence, synced = (
@@ -373,12 +437,15 @@ def test_autonomous_sync_refuses_incomplete_gameweek(
     arguments = build_arguments(
         autonomous=True,
     )
+
     state = SimpleNamespace(
         current_gameweek=1,
     )
+
     intelligence = build_intelligence(
         state_status=main_module.ADVANCEMENT_REQUIRED,
         hours_until_deadline=6.0,
+        official_next_gameweek=2,
     )
 
     monkeypatch.setattr(
@@ -387,7 +454,10 @@ def test_autonomous_sync_refuses_incomplete_gameweek(
         lambda *_args, **_kwargs: False,
     )
 
-    def fail_if_advanced(*args, **kwargs):
+    def fail_if_advanced(
+        *args,
+        **kwargs,
+    ):
         raise AssertionError(
             "Incomplete Gameweek was advanced."
         )
@@ -397,6 +467,7 @@ def test_autonomous_sync_refuses_incomplete_gameweek(
         "advance_gameweek",
         fail_if_advanced,
     )
+
     monkeypatch.setattr(
         main_module,
         "save_manager_state",
@@ -429,19 +500,25 @@ def test_autonomous_sync_advances_one_completed_gameweek(
     arguments = build_arguments(
         autonomous=True,
     )
+
     state = SimpleNamespace(
         current_gameweek=1,
     )
+
     intelligence = build_intelligence(
         state_status=main_module.ADVANCEMENT_REQUIRED,
         hours_until_deadline=6.0,
+        official_next_gameweek=2,
     )
+
     advanced_state = SimpleNamespace(
         current_gameweek=2,
     )
+
     refreshed_intelligence = build_intelligence(
         state_status="ALIGNED",
         hours_until_deadline=72.0,
+        official_next_gameweek=3,
     )
 
     monkeypatch.setattr(
@@ -449,6 +526,7 @@ def test_autonomous_sync_advances_one_completed_gameweek(
         "gameweek_is_processed",
         lambda *_args, **_kwargs: True,
     )
+
     monkeypatch.setattr(
         main_module,
         "advance_gameweek",
@@ -457,9 +535,16 @@ def test_autonomous_sync_advances_one_completed_gameweek(
 
     saved = []
 
-    def record_save(*, state, state_path):
+    def record_save(
+        *,
+        state,
+        state_path,
+    ):
         saved.append(
-            (state, state_path)
+            (
+                state,
+                state_path,
+            )
         )
 
     monkeypatch.setattr(
@@ -467,10 +552,13 @@ def test_autonomous_sync_advances_one_completed_gameweek(
         "save_manager_state",
         record_save,
     )
+
     monkeypatch.setattr(
         main_module,
         "analyse_deadline_intelligence",
-        lambda *, bootstrap_data, saved_gameweek: refreshed_intelligence,
+        lambda *,
+        bootstrap_data,
+        saved_gameweek: refreshed_intelligence,
     )
 
     returned_state, returned_intelligence, synced = (
@@ -478,7 +566,9 @@ def test_autonomous_sync_advances_one_completed_gameweek(
             arguments=arguments,
             intelligence=intelligence,
             manager_state=state,
-            bootstrap_data={"events": []},
+            bootstrap_data={
+                "events": [],
+            },
         )
     )
 
@@ -487,11 +577,115 @@ def test_autonomous_sync_advances_one_completed_gameweek(
     assert returned_state is advanced_state
     assert returned_intelligence is refreshed_intelligence
     assert synced
+
     assert saved == [
         (
             advanced_state,
             main_module.STATE_PATH,
         )
     ]
+
     assert "Status: ADVANCED" in output
     assert "Gameweek 1 to Gameweek 2" in output
+
+
+def test_autonomous_sync_advances_processed_aligned_state(
+    main_module,
+    monkeypatch,
+    capsys,
+):
+    """
+    A processed saved Gameweek may roll into the official next
+    Gameweek even while Deadline Intelligence still reports ALIGNED.
+    """
+
+    arguments = build_arguments(
+        autonomous=True,
+    )
+
+    state = SimpleNamespace(
+        current_gameweek=3,
+    )
+
+    intelligence = build_intelligence(
+        state_status="ALIGNED",
+        hours_until_deadline=21.5,
+        official_next_gameweek=4,
+    )
+
+    advanced_state = SimpleNamespace(
+        current_gameweek=4,
+    )
+
+    refreshed_intelligence = build_intelligence(
+        state_status="STATE AHEAD",
+        hours_until_deadline=21.5,
+        official_next_gameweek=4,
+    )
+
+    monkeypatch.setattr(
+        main_module,
+        "gameweek_is_processed",
+        lambda *_args, **_kwargs: True,
+    )
+
+    monkeypatch.setattr(
+        main_module,
+        "advance_gameweek",
+        lambda state: advanced_state,
+    )
+
+    saved = []
+
+    def record_save(
+        *,
+        state,
+        state_path,
+    ):
+        saved.append(
+            (
+                state,
+                state_path,
+            )
+        )
+
+    monkeypatch.setattr(
+        main_module,
+        "save_manager_state",
+        record_save,
+    )
+
+    monkeypatch.setattr(
+        main_module,
+        "analyse_deadline_intelligence",
+        lambda *,
+        bootstrap_data,
+        saved_gameweek: refreshed_intelligence,
+    )
+
+    returned_state, returned_intelligence, synced = (
+        main_module.autonomous_sync_gameweek_state(
+            arguments=arguments,
+            intelligence=intelligence,
+            manager_state=state,
+            bootstrap_data={
+                "events": [],
+            },
+        )
+    )
+
+    output = capsys.readouterr().out
+
+    assert returned_state is advanced_state
+    assert returned_intelligence is refreshed_intelligence
+    assert synced
+
+    assert saved == [
+        (
+            advanced_state,
+            main_module.STATE_PATH,
+        )
+    ]
+
+    assert "Status: ADVANCED" in output
+    assert "Gameweek 3 to Gameweek 4" in output

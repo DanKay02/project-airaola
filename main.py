@@ -333,10 +333,35 @@ def autonomous_sync_gameweek_state(
     if not arguments.autonomous:
         return manager_state, intelligence, False
 
-    if intelligence.state_status != ADVANCEMENT_REQUIRED:
-        return manager_state, intelligence, False
+    current_gameweek = int(
+        manager_state.current_gameweek
+    )
 
-    current_gameweek = int(manager_state.current_gameweek)
+    official_next_gameweek = (
+        intelligence.official_next_gameweek
+    )
+
+    advancement_required = (
+        intelligence.state_status
+        == ADVANCEMENT_REQUIRED
+    )
+
+    processed_aligned_rollover = (
+        intelligence.state_status == "ALIGNED"
+        and official_next_gameweek is not None
+        and int(official_next_gameweek)
+        == current_gameweek + 1
+        and gameweek_is_processed(
+            manager_state,
+            current_gameweek,
+        )
+    )
+
+    if not (
+        advancement_required
+        or processed_aligned_rollover
+    ):
+        return manager_state, intelligence, False
 
     print()
     print("=" * 60)
@@ -376,7 +401,8 @@ def autonomous_sync_gameweek_state(
     )
     print(
         "Reason: the previous Gameweek was fully processed and "
-        "official FPL timing now requires the next lifecycle."
+        "the official next Gameweek is now available for the "
+        "next autonomous lifecycle."
     )
     print(
         f"Manager state saved successfully: {STATE_PATH}"
