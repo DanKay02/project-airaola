@@ -1,8 +1,8 @@
 {
-  "current_gameweek": 3,
+  "current_gameweek": 4,
   "free_transfers": 1,
-  "bank": 0.8,
-  "last_processed_gameweek": 3,
+  "bank": 2.3,
+  "last_processed_gameweek": 4,
   "squad": [
     {
       "player_id": 4,
@@ -22,14 +22,6 @@
     },
     {
       "player_id": 388,
-      "purchase_price": 6.0
-    },
-    {
-      "player_id": 498,
-      "purchase_price": 6.0
-    },
-    {
-      "player_id": 527,
       "purchase_price": 6.0
     },
     {
@@ -63,13 +55,21 @@
     {
       "player_id": 426,
       "purchase_price": 12.0
+    },
+    {
+      "player_id": 115,
+      "purchase_price": 4.8
+    },
+    {
+      "player_id": 492,
+      "purchase_price": 5.5
     }
   ],
   "chips": {
     "first_half": {
       "wildcard": true,
       "free_hit": true,
-      "bench_boost": true,
+      "bench_boost": false,
       "triple_captain": true
     },
     "second_half": {
@@ -210,6 +210,42 @@
           "next_gameweek_gain": 3.27
         }
       ]
+    },
+    {
+      "gameweek": 4,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 2,
+      "hit_cost": 4.0,
+      "gross_projected_gain": 32.76,
+      "net_strategic_gain": 28.01,
+      "bank_before": 0.8,
+      "bank_after": 2.3,
+      "moves": [
+        {
+          "player_out_id": 498,
+          "player_out_name": "Marcos Senesi Barón",
+          "player_in_id": 115,
+          "player_in_name": "Maxim De Cuyper",
+          "position": "DEF",
+          "selling_price": 5.9,
+          "purchase_price": 4.8,
+          "projected_gain": 11.72,
+          "next_gameweek_gain": 2.58
+        },
+        {
+          "player_out_id": 527,
+          "player_out_name": "Richarlison de Andrade",
+          "player_in_id": 492,
+          "player_in_name": "Taiwo Awoniyi",
+          "position": "FWD",
+          "selling_price": 5.9,
+          "purchase_price": 5.5,
+          "projected_gain": 21.04,
+          "next_gameweek_gain": 4.53
+        }
+      ]
     }
   ],
   "chip_history": [
@@ -239,6 +275,22 @@
       "adjusted_gain": 0.0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 46.89 adjusted points against a 18.00 threshold."
+    },
+    {
+      "gameweek": 4,
+      "period": "first_half",
+      "decision": "BENCH BOOST",
+      "chip_key": "bench_boost",
+      "projected_gain": 15.75,
+      "adjusted_gain": 15.75,
+      "execution_threshold": 14.0,
+      "recommendation_strength": "MODERATE",
+      "captain_name": "João Pedro Junqueira de Jesus",
+      "captain_projected_points": 6.47,
+      "bench_projected_points": 15.75,
+      "reason": "Bench Boost would add the projected 15.75 points from all four substitutes.",
+      "persistent_squad_changed": false,
+      "free_transfers_preserved": false
     }
   ],
   "lifecycle_history": [
@@ -279,6 +331,22 @@
       "gameweek": 3,
       "free_transfers_ready": 1,
       "bank": 0.8,
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_ADVANCED",
+      "from_gameweek": 3,
+      "to_gameweek": 4,
+      "free_transfers_available": 1,
+      "bank": 0.8,
+      "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 4,
+      "free_transfers_ready": 1,
+      "bank": 2.3,
       "active_chip_period": "first_half"
     }
   ]
