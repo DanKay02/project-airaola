@@ -1,5 +1,5 @@
 {
-  "current_gameweek": 4,
+  "current_gameweek": 5,
   "free_transfers": 1,
   "bank": 2.3,
   "last_processed_gameweek": 4,
@@ -347,6 +347,15 @@
       "gameweek": 4,
       "free_transfers_ready": 1,
       "bank": 2.3,
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_ADVANCED",
+      "from_gameweek": 4,
+      "to_gameweek": 5,
+      "free_transfers_available": 1,
+      "bank": 2.3,
+      "expired_first_half_chips": [],
       "active_chip_period": "first_half"
     }
   ]
