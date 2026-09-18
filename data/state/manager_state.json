@@ -1,8 +1,8 @@
 {
   "current_gameweek": 5,
   "free_transfers": 1,
-  "bank": 2.3,
-  "last_processed_gameweek": 4,
+  "bank": 2.1,
+  "last_processed_gameweek": 5,
   "squad": [
     {
       "player_id": 4,
@@ -33,10 +33,6 @@
       "purchase_price": 4.5
     },
     {
-      "player_id": 10,
-      "purchase_price": 5.5
-    },
-    {
       "player_id": 335,
       "purchase_price": 6.0
     },
@@ -61,7 +57,11 @@
       "purchase_price": 4.8
     },
     {
-      "player_id": 492,
+      "player_id": 391,
+      "purchase_price": 5.7
+    },
+    {
+      "player_id": 316,
       "purchase_price": 5.5
     }
   ],
@@ -246,6 +246,42 @@
           "next_gameweek_gain": 4.53
         }
       ]
+    },
+    {
+      "gameweek": 5,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 2,
+      "hit_cost": 4.0,
+      "gross_projected_gain": 36.13,
+      "net_strategic_gain": 31.38,
+      "bank_before": 2.3,
+      "bank_after": 2.1,
+      "moves": [
+        {
+          "player_out_id": 10,
+          "player_out_name": "Benjamin White",
+          "player_in_id": 391,
+          "player_in_name": "Joško Gvardiol",
+          "position": "DEF",
+          "selling_price": 5.5,
+          "purchase_price": 5.7,
+          "projected_gain": 13.0,
+          "next_gameweek_gain": 3.41
+        },
+        {
+          "player_out_id": 492,
+          "player_out_name": "Taiwo Awoniyi",
+          "player_in_id": 316,
+          "player_in_name": "Emersonn Correia da Silva",
+          "position": "FWD",
+          "selling_price": 5.5,
+          "purchase_price": 5.5,
+          "projected_gain": 23.13,
+          "next_gameweek_gain": 4.43
+        }
+      ]
     }
   ],
   "chip_history": [
@@ -291,6 +327,15 @@
       "reason": "Bench Boost would add the projected 15.75 points from all four substitutes.",
       "persistent_squad_changed": false,
       "free_transfers_preserved": false
+    },
+    {
+      "gameweek": 5,
+      "period": "first_half",
+      "decision": "NO CHIP",
+      "projected_gain": 0.0,
+      "adjusted_gain": 0.0,
+      "recommendation_strength": "HOLD",
+      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 49.34 adjusted points against a 18.00 threshold."
     }
   ],
   "lifecycle_history": [
@@ -356,6 +401,13 @@
       "free_transfers_available": 1,
       "bank": 2.3,
       "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 5,
+      "free_transfers_ready": 1,
+      "bank": 2.1,
       "active_chip_period": "first_half"
     }
   ]

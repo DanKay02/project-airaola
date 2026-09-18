@@ -1,0 +1,78 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 5 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 5, 2026-09-18 18:30 BST
+Hours remaining: 16.25
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £97.4m
+Current market value: £98.3m
+Official selling value: £97.7m
+Money in bank: £2.3m
+Available budget: £100.0m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: EXCEPTIONAL
+Gross projected gain: +36.13
+Net strategic gain: +31.38
+Hit cost: 4.00
+Reason: The 2-transfer plan adds 36.13 projected points before strategic costs and 31.38 points after them. Its complexity-adjusted execution threshold is 3.00. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Benjamin White (£5.5m) and buy Joško Gvardiol (£5.7m).
+- Sell Taiwo Awoniyi (£5.5m) and buy Emersonn Correia da Silva (£5.5m).
+- This plan includes a 4-point hit.
+
+STARTING XI
+Formation: 5-3-2
+- GKP: Konstantinos Tzolakis (Hull City) | 4.37 pts
+- DEF: Joško Gvardiol (Man City) [VC] | 6.49 pts
+- DEF: Marc Guéhi (Man City) | 5.86 pts
+- DEF: Maxim De Cuyper (Brighton) | 5.31 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 5.24 pts
+- DEF: Riccardo Calafiori (Arsenal) | 5.06 pts
+- MID: Bruno Borges Fernandes (Man Utd) [C] | 5.90 pts
+- MID: Kiernan Dewsbury-Hall (Everton) | 4.89 pts
+- MID: Anton Stach (Leeds) | 4.86 pts
+- FWD: Dominic Calvert-Lewin (Leeds) | 4.72 pts
+- FWD: Emersonn Correia da Silva (Ipswich Town) | 4.43 pts
+
+Captain: Bruno Borges Fernandes (5.90 pts)
+Vice-captain: Joško Gvardiol (6.49 pts)
+Projected XI points before captaincy: 57.13
+Projected team total with captaincy: 63.03
+
+BENCH
+- 1. João Pedro Junqueira de Jesus (Chelsea, FWD) | 4.48 pts
+- 2. Dominik Szoboszlai (Liverpool, MID) | 3.79 pts
+- 3. Cody Gakpo (Liverpool, MID) | 4.00 pts
+- 4. Gianluigi Donnarumma (Man City, GKP) | 4.34 pts
+Projected bench points: 16.61
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 49.34 adjusted points against a 18.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Bruno Borges Fernandes.
+- Set vice-captain to Joško Gvardiol.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.
