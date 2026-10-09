@@ -1,0 +1,79 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 6 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 6, 2026-10-10 11:00 BST
+Hours remaining: 22.15
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £97.6m
+Current market value: £98.6m
+Official selling value: £97.9m
+Money in bank: £2.1m
+Available budget: £100.0m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: EXCEPTIONAL
+Gross projected gain: +39.30
+Net strategic gain: +30.55
+Hit cost: 8.00
+Reason: The 3-transfer plan adds 39.30 projected points before strategic costs and 30.55 points after them. Its complexity-adjusted execution threshold is 4.50. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Cody Gakpo (£7.1m) and buy Pascal Groß (£5.9m).
+- Sell Dominik Szoboszlai (£6.9m) and buy Kevin Schade (£6.2m).
+- Sell Kiernan Dewsbury-Hall (£6.5m) and buy Bukayo Saka (£9.6m).
+- This plan includes a 8-point hit.
+
+STARTING XI
+Formation: 4-4-2
+- GKP: Konstantinos Tzolakis (Hull City) | 4.53 pts
+- DEF: Maxim De Cuyper (Brighton) | 5.59 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 5.39 pts
+- DEF: Riccardo Calafiori (Arsenal) | 4.97 pts
+- DEF: Joško Gvardiol (Man City) | 4.75 pts
+- MID: Pascal Groß (Brighton) [C] | 6.51 pts
+- MID: Bruno Borges Fernandes (Man Utd) [VC] | 6.19 pts
+- MID: Bukayo Saka (Arsenal) | 5.89 pts
+- MID: Kevin Schade (Brentford) | 5.71 pts
+- FWD: Emersonn Correia da Silva (Ipswich Town) | 5.36 pts
+- FWD: João Pedro Junqueira de Jesus (Chelsea) | 4.77 pts
+
+Captain: Pascal Groß (6.51 pts)
+Vice-captain: Bruno Borges Fernandes (6.19 pts)
+Projected XI points before captaincy: 59.66
+Projected team total with captaincy: 66.17
+
+BENCH
+- 1. Marc Guéhi (Man City, DEF) | 4.19 pts
+- 2. Anton Stach (Leeds, MID) | 3.40 pts
+- 3. Dominic Calvert-Lewin (Leeds, FWD) | 3.39 pts
+- 4. Gianluigi Donnarumma (Man City, GKP) | 3.16 pts
+Projected bench points: 14.14
+
+CHIP DECISION
+Decision: WILDCARD
+Recommendation strength: EXCEPTIONAL
+Projected gain: +56.59
+Adjusted gain: +56.59
+Reason: Wildcard would improve the long-horizon squad by 56.59 projected points through 10 permanent player changes. The optimiser compared both squads using the same legal formations, captaincy scoring and bench-cover weighting.
+
+MANUAL CHIP ACTION
+- Activate Wildcard.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Pascal Groß.
+- Set vice-captain to Bruno Borges Fernandes.
+- Arrange the bench in the listed order.
+- Activate Wildcard.
+- Confirm all changes before the official deadline.

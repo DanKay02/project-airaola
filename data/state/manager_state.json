@@ -1,73 +1,73 @@
 {
   "current_gameweek": 6,
   "free_transfers": 1,
-  "bank": 2.1,
-  "last_processed_gameweek": 5,
+  "bank": 0.1,
+  "last_processed_gameweek": 6,
   "squad": [
+    {
+      "player_id": 1,
+      "purchase_price": 6.1
+    },
     {
       "player_id": 4,
       "purchase_price": 8.0
     },
     {
-      "player_id": 165,
-      "purchase_price": 7.5
+      "player_id": 12,
+      "purchase_price": 9.6
     },
     {
-      "player_id": 346,
-      "purchase_price": 6.0
+      "player_id": 68,
+      "purchase_price": 6.1
     },
     {
-      "player_id": 384,
-      "purchase_price": 5.5
-    },
-    {
-      "player_id": 388,
-      "purchase_price": 6.0
-    },
-    {
-      "player_id": 368,
-      "purchase_price": 7.0
-    },
-    {
-      "player_id": 572,
-      "purchase_price": 4.5
-    },
-    {
-      "player_id": 335,
-      "purchase_price": 6.0
-    },
-    {
-      "player_id": 367,
-      "purchase_price": 7.0
-    },
-    {
-      "player_id": 236,
-      "purchase_price": 6.5
-    },
-    {
-      "player_id": 8,
-      "purchase_price": 5.6
-    },
-    {
-      "player_id": 426,
-      "purchase_price": 12.0
+      "player_id": 94,
+      "purchase_price": 6.2
     },
     {
       "player_id": 115,
-      "purchase_price": 4.8
+      "purchase_price": 5.0
+    },
+    {
+      "player_id": 124,
+      "purchase_price": 5.9
+    },
+    {
+      "player_id": 138,
+      "purchase_price": 5.6
+    },
+    {
+      "player_id": 229,
+      "purchase_price": 6.2
+    },
+    {
+      "player_id": 286,
+      "purchase_price": 5.1
+    },
+    {
+      "player_id": 572,
+      "purchase_price": 4.7
+    },
+    {
+      "player_id": 316,
+      "purchase_price": 5.5
+    },
+    {
+      "player_id": 330,
+      "purchase_price": 4.6
     },
     {
       "player_id": 391,
       "purchase_price": 5.7
     },
     {
-      "player_id": 316,
-      "purchase_price": 5.5
+      "player_id": 411,
+      "purchase_price": 15.6
     }
   ],
   "chips": {
     "first_half": {
-      "wildcard": true,
+      "wildcard": false,
       "free_hit": true,
       "bench_boost": false,
       "triple_captain": true
@@ -282,6 +282,55 @@
           "next_gameweek_gain": 4.43
         }
       ]
+    },
+    {
+      "gameweek": 6,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 3,
+      "hit_cost": 8.0,
+      "gross_projected_gain": 39.3,
+      "net_strategic_gain": 30.55,
+      "bank_before": 2.1,
+      "bank_after": 0.9,
+      "moves": [
+        {
+          "player_out_id": 367,
+          "player_out_name": "Cody Gakpo",
+          "player_in_id": 124,
+          "player_in_name": "Pascal Groß",
+          "position": "MID",
+          "selling_price": 7.1,
+          "purchase_price": 5.9,
+          "projected_gain": 18.84,
+          "next_gameweek_gain": 3.81
+        },
+        {
+          "player_out_id": 368,
+          "player_out_name": "Dominik Szoboszlai",
+          "player_in_id": 94,
+          "player_in_name": "Kevin Schade",
+          "position": "MID",
+          "selling_price": 6.9,
+          "purchase_price": 6.2,
+          "projected_gain": 11.33,
+          "next_gameweek_gain": 2.23
+        },
+        {
+          "player_out_id": 236,
+          "player_out_name": "Kiernan Dewsbury-Hall",
+          "player_in_id": 12,
+          "player_in_name": "Bukayo Saka",
+          "position": "MID",
+          "selling_price": 6.5,
+          "purchase_price": 9.6,
+          "projected_gain": 9.13,
+          "next_gameweek_gain": 1.75
+        }
+      ],
+      "superseded_by": "WILDCARD",
+      "applied_to_squad": false
     }
   ],
   "chip_history": [
@@ -336,6 +385,169 @@
       "adjusted_gain": 0.0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 49.34 adjusted points against a 18.00 threshold."
+    },
+    {
+      "gameweek": 6,
+      "period": "first_half",
+      "decision": "WILDCARD",
+      "chip_key": "wildcard",
+      "projected_gain": 56.59,
+      "adjusted_gain": 56.59,
+      "execution_threshold": 18.0,
+      "recommendation_strength": "EXCEPTIONAL",
+      "captain_name": "Pascal Groß",
+      "captain_projected_points": 6.51,
+      "bench_projected_points": 14.14,
+      "reason": "Wildcard would improve the long-horizon squad by 56.59 projected points through 10 permanent player changes. The optimiser compared both squads using the same legal formations, captaincy scoring and bench-cover weighting.",
+      "persistent_squad_changed": true,
+      "free_transfers_preserved": true,
+      "chip_squad": {
+        "players": [
+          {
+            "player_id": 1,
+            "player_name": "David Raya Martín",
+            "team_name": "Arsenal",
+            "position": "GKP",
+            "price": 6.1
+          },
+          {
+            "player_id": 4,
+            "player_name": "Gabriel dos Santos Magalhães",
+            "team_name": "Arsenal",
+            "position": "DEF",
+            "price": 8.0
+          },
+          {
+            "player_id": 12,
+            "player_name": "Bukayo Saka",
+            "team_name": "Arsenal",
+            "position": "MID",
+            "price": 9.6
+          },
+          {
+            "player_id": 68,
+            "player_name": "Marcus Tavernier",
+            "team_name": "Bournemouth",
+            "position": "MID",
+            "price": 6.1
+          },
+          {
+            "player_id": 94,
+            "player_name": "Kevin Schade",
+            "team_name": "Brentford",
+            "position": "MID",
+            "price": 6.2
+          },
+          {
+            "player_id": 115,
+            "player_name": "Maxim De Cuyper",
+            "team_name": "Brighton",
+            "position": "DEF",
+            "price": 5.0
+          },
+          {
+            "player_id": 124,
+            "player_name": "Pascal Groß",
+            "team_name": "Brighton",
+            "position": "MID",
+            "price": 5.9
+          },
+          {
+            "player_id": 138,
+            "player_name": "Charalampos Kostoulas",
+            "team_name": "Brighton",
+            "position": "FWD",
+            "price": 5.6
+          },
+          {
+            "player_id": 229,
+            "player_name": "James Tarkowski",
+            "team_name": "Everton",
+            "position": "DEF",
+            "price": 6.2
+          },
+          {
+            "player_id": 286,
+            "player_name": "Mohamed Belloumi",
+            "team_name": "Hull City",
+            "position": "MID",
+            "price": 5.1
+          },
+          {
+            "player_id": 572,
+            "player_name": "Konstantinos Tzolakis",
+            "team_name": "Hull City",
+            "position": "GKP",
+            "price": 4.7
+          },
+          {
+            "player_id": 316,
+            "player_name": "Emersonn Correia da Silva",
+            "team_name": "Ipswich Town",
+            "position": "FWD",
+            "price": 5.5
+          },
+          {
+            "player_id": 330,
+            "player_name": "Jayden Bogle",
+            "team_name": "Leeds",
+            "position": "DEF",
+            "price": 4.6
+          },
+          {
+            "player_id": 391,
+            "player_name": "Joško Gvardiol",
+            "team_name": "Man City",
+            "position": "DEF",
+            "price": 5.7
+          },
+          {
+            "player_id": 411,
+            "player_name": "Erling Haaland",
+            "team_name": "Man City",
+            "position": "FWD",
+            "price": 15.6
+          }
+        ],
+        "evaluation": {
+          "optimisation_succeeded": true,
+          "current_projected_points": 309.72,
+          "optimised_projected_points": 366.31,
+          "projected_gain": 56.59,
+          "current_next_gameweek_points": 309.72,
+          "optimised_next_gameweek_points": 366.31,
+          "next_gameweek_gain": 56.59,
+          "available_budget": 100.0,
+          "optimised_squad_cost": 99.9,
+          "bank_remaining": 0.1,
+          "secure_player_count": 15,
+          "changed_player_count": 10,
+          "incoming_players": [
+            "James Tarkowski",
+            "Jayden Bogle",
+            "Charalampos Kostoulas",
+            "Erling Haaland",
+            "David Raya Martín",
+            "Bukayo Saka",
+            "Kevin Schade",
+            "Marcus Tavernier",
+            "Mohamed Belloumi",
+            "Pascal Groß"
+          ],
+          "outgoing_players": [
+            "Marc Guéhi",
+            "Riccardo Calafiori",
+            "Dominic Calvert-Lewin",
+            "João Pedro Junqueira de Jesus",
+            "Gianluigi Donnarumma",
+            "Anton Stach",
+            "Bruno Borges Fernandes",
+            "Cody Gakpo",
+            "Dominik Szoboszlai",
+            "Kiernan Dewsbury-Hall"
+          ]
+        }
+      }
     }
   ],
   "lifecycle_history": [
@@ -417,6 +629,13 @@
       "free_transfers_available": 1,
       "bank": 2.1,
       "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 6,
+      "free_transfers_ready": 1,
+      "bank": 0.1,
       "active_chip_period": "first_half"
     }
   ]
