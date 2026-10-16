@@ -1,8 +1,8 @@
 {
   "current_gameweek": 7,
   "free_transfers": 1,
-  "bank": 0.1,
-  "last_processed_gameweek": 6,
+  "bank": 1.4,
+  "last_processed_gameweek": 7,
   "squad": [
     {
       "player_id": 1,
@@ -11,10 +11,6 @@
     {
       "player_id": 4,
       "purchase_price": 8.0
-    },
-    {
-      "player_id": 12,
-      "purchase_price": 9.6
     },
     {
       "player_id": 68,
@@ -63,6 +59,10 @@
     {
       "player_id": 411,
       "purchase_price": 15.6
+    },
+    {
+      "player_id": 397,
+      "purchase_price": 8.3
     }
   ],
   "chips": {
@@ -331,6 +331,31 @@
       ],
       "superseded_by": "WILDCARD",
       "applied_to_squad": false
+    },
+    {
+      "gameweek": 7,
+      "decision": "EXECUTE",
+      "free_transfers_before": 1,
+      "free_transfers_after": 1,
+      "transfers_used": 1,
+      "hit_cost": 0.0,
+      "gross_projected_gain": 6.31,
+      "net_strategic_gain": 5.56,
+      "bank_before": 0.1,
+      "bank_after": 1.4,
+      "moves": [
+        {
+          "player_out_id": 12,
+          "player_out_name": "Bukayo Saka",
+          "player_in_id": 397,
+          "player_in_name": "Antoine Semenyo",
+          "position": "MID",
+          "selling_price": 9.6,
+          "purchase_price": 8.3,
+          "projected_gain": 6.31,
+          "next_gameweek_gain": 2.08
+        }
+      ]
     }
   ],
   "chip_history": [
@@ -548,6 +573,15 @@
           ]
         }
       }
+    },
+    {
+      "gameweek": 7,
+      "period": "first_half",
+      "decision": "NO CHIP",
+      "projected_gain": 0.0,
+      "adjusted_gain": 0.0,
+      "recommendation_strength": "HOLD",
+      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 35.85 adjusted points against a 18.00 threshold."
     }
   ],
   "lifecycle_history": [
@@ -645,6 +679,13 @@
       "free_transfers_available": 1,
       "bank": 0.1,
       "expired_first_half_chips": [],
+      "active_chip_period": "first_half"
+    },
+    {
+      "event": "GAMEWEEK_PROCESSED",
+      "gameweek": 7,
+      "free_transfers_ready": 1,
+      "bank": 1.4,
       "active_chip_period": "first_half"
     }
   ]

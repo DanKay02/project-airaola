@@ -1,0 +1,76 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 7 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 7, 2026-10-17 11:00 BST
+Hours remaining: 18.64
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £99.9m
+Current market value: £100.5m
+Official selling value: £99.8m
+Money in bank: £0.1m
+Available budget: £99.9m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: STRONG
+Gross projected gain: +6.31
+Net strategic gain: +5.56
+Hit cost: 0.00
+Reason: The 1-transfer plan adds 6.31 projected points before strategic costs and 5.56 points after them. Its complexity-adjusted execution threshold is 1.50. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Bukayo Saka (£9.6m) and buy Antoine Semenyo (£8.3m).
+
+STARTING XI
+Formation: 5-3-2
+- GKP: Konstantinos Tzolakis (Hull City) | 3.97 pts
+- DEF: Maxim De Cuyper (Brighton) | 7.83 pts
+- DEF: James Tarkowski (Everton) | 5.48 pts
+- DEF: Joško Gvardiol (Man City) | 5.14 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 4.27 pts
+- DEF: Jayden Bogle (Leeds) | 4.19 pts
+- MID: Pascal Groß (Brighton) [C] | 7.56 pts
+- MID: Antoine Semenyo (Man City) | 6.84 pts
+- MID: Marcus Tavernier (Bournemouth) | 4.39 pts
+- FWD: Erling Haaland (Man City) [VC] | 7.61 pts
+- FWD: Charalampos Kostoulas (Brighton) | 5.97 pts
+
+Captain: Pascal Groß (7.56 pts)
+Vice-captain: Erling Haaland (7.61 pts)
+Projected XI points before captaincy: 63.25
+Projected team total with captaincy: 70.81
+
+BENCH
+- 1. Kevin Schade (Brentford, MID) | 3.48 pts
+- 2. Mohamed Belloumi (Hull City, MID) | 3.86 pts
+- 3. Emersonn Correia da Silva (Ipswich Town, FWD) | 3.05 pts
+- 4. David Raya Martín (Arsenal, GKP) | 3.88 pts
+Projected bench points: 14.27
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 35.85 adjusted points against a 18.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Pascal Groß.
+- Set vice-captain to Erling Haaland.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.
