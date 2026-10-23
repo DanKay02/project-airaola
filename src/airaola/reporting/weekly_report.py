@@ -522,6 +522,8 @@ def build_weekly_report(
     bench: pd.DataFrame,
     chip_recommendation: ChipRecommendation,
     lifecycle_status: str,
+    chip_squad: pd.DataFrame | None = None,
+    original_squad: pd.DataFrame | None = None,
 ) -> WeeklyReport:
     """Build plain-text and HTML weekly decision reports."""
 
@@ -575,6 +577,23 @@ def build_weekly_report(
     transfer_actions = _transfer_actions(
         transfer_plan
     )
+    if chip_squad is not None:
+        if original_squad is None:
+            raise ValueError("A chip squad requires the original squad.")
+        if len(chip_squad) != 15 or len(original_squad) != 15:
+            raise ValueError("Chip squad comparison requires 15 players each.")
+        before = set(original_squad["id"].astype(int))
+        after = set(chip_squad["id"].astype(int))
+        incoming = chip_squad[chip_squad["id"].astype(int).isin(after - before)]
+        outgoing = original_squad[original_squad["id"].astype(int).isin(before - after)]
+        if len(incoming) != len(outgoing):
+            raise ValueError("Chip squad has inconsistent incoming/outgoing counts.")
+        transfer_actions = [
+            "Ordinary transfer plan superseded by the selected chip.",
+            "Remove: " + (", ".join(outgoing["player_name"].astype(str)) or "none") + ".",
+            "Add: " + (", ".join(incoming["player_name"].astype(str)) or "none") + ".",
+            "Do not apply the ordinary transfer hit.",
+        ]
 
     text_lines = [
         "=" * 68,
@@ -795,7 +814,7 @@ def build_weekly_report(
 
         <h4>Manual Transfer Actions</h4>
         <ul>
-            {_transfer_actions_html(transfer_plan)}
+            {"".join(f"<li>{escape(action)}</li>" for action in transfer_actions)}
         </ul>
 
         <h3>Starting XI</h3>
