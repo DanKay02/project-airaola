@@ -588,3 +588,40 @@ def test_invalid_bench_order_is_rejected() -> None:
             ),
             lifecycle_status="OPEN",
         )
+
+def test_chip_report_supersedes_ordinary_transfers() -> None:
+    """A Wildcard report must not instruct the ordinary transfer plan."""
+    original = pd.concat([_starting_xi(), _bench()], ignore_index=True)
+    chip = original.copy()
+    chip.loc[chip["id"] == 6, "id"] = 22
+    chip.loc[chip["id"] == 22, "player_name"] = "Wildcard Midfielder"
+    report = build_weekly_report(
+        deadline_intelligence=_deadline_intelligence(),
+        squad_value=_squad_value(),
+        transfer_plan=_execute_transfer_plan(),
+        starting_xi=_starting_xi(),
+        bench=_bench(),
+        chip_recommendation=_chip_recommendation("WILDCARD"),
+        lifecycle_status="OPEN",
+        chip_squad=chip,
+        original_squad=original,
+    )
+    assert "Ordinary transfer plan superseded" in report.text_content
+    assert "Remove: Midfielder Two." in report.text_content
+    assert "Add: Wildcard Midfielder." in report.text_content
+    assert "Sell Outgoing Player" not in report.text_content
+    assert "Wildcard Midfielder" in report.html_content
+
+
+def test_chip_report_rejects_missing_original_squad() -> None:
+    with pytest.raises(ValueError, match="original squad"):
+        build_weekly_report(
+            deadline_intelligence=_deadline_intelligence(),
+            squad_value=_squad_value(),
+            transfer_plan=_execute_transfer_plan(),
+            starting_xi=_starting_xi(),
+            bench=_bench(),
+            chip_recommendation=_chip_recommendation("WILDCARD"),
+            lifecycle_status="OPEN",
+            chip_squad=pd.concat([_starting_xi(), _bench()], ignore_index=True),
+        )
