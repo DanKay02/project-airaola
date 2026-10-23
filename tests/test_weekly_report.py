@@ -641,3 +641,25 @@ def test_existing_squad_may_appreciate_above_initial_budget() -> None:
     )
     assert not validate_squad(squad).is_valid
     assert validate_squad(squad, enforce_budget=False).is_valid
+
+
+def test_wildcard_report_does_not_claim_ordinary_transfer_gain_or_hit() -> None:
+    original = pd.concat([_starting_xi(), _bench()], ignore_index=True)
+    chip = original.copy()
+    chip.loc[chip["id"] == 6, "id"] = 22
+    chip.loc[chip["id"] == 22, "player_name"] = "Wildcard Midfielder"
+    report = build_weekly_report(
+        deadline_intelligence=_deadline_intelligence(),
+        squad_value=_squad_value(),
+        transfer_plan=_execute_transfer_plan(),
+        starting_xi=_starting_xi(),
+        bench=_bench(),
+        chip_recommendation=_chip_recommendation("WILDCARD"),
+        lifecycle_status="PROCESSED",
+        chip_squad=chip,
+        original_squad=original,
+    )
+    assert "Decision: SUPERSEDED BY WILDCARD" in report.text_content
+    assert "Hit cost: 0.00" in report.text_content
+    assert "Net strategic gain: +0.00" in report.text_content
+    assert "Decision:</strong> SUPERSEDED BY WILDCARD" in report.html_content
