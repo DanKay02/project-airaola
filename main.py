@@ -576,6 +576,7 @@ def print_projection_summary(
 
 def print_optimised_squad(
     squad: pd.DataFrame,
+    existing_squad: bool = False,
 ) -> None:
     """
     Validate and display Airaola's current squad.
@@ -585,7 +586,7 @@ def print_optimised_squad(
     persistent manager state.
     """
 
-    result = validate_squad(squad)
+    result = validate_squad(squad, enforce_budget=not existing_squad)
 
     print()
     print("=" * 60)
@@ -1913,7 +1914,7 @@ def main() -> None:
             "reconstructing saved team..."
         )
 
-        print_optimised_squad(squad)
+        print_optimised_squad(squad, existing_squad=True)
 
         squad_value = calculate_squad_value(
             squad=squad,
@@ -2188,13 +2189,6 @@ def main() -> None:
                 "Chip decision not applied."
             )
 
-        if transfer_overridden and selected_chip_squad is not None:
-            # The final XI must come from the chosen chip squad, never
-            # the ordinary transfer plan it superseded.
-            starting_xi, bench, _, _ = select_gameweek_team(
-                selected_chip_squad
-            )
-
         decisions_recorded = (
             should_apply
             and should_apply_chip
@@ -2240,8 +2234,6 @@ def main() -> None:
             lifecycle_status=(
                 lifecycle_status
             ),
-            chip_squad=(selected_chip_squad if transfer_overridden else None),
-            original_squad=(squad if transfer_overridden else None),
         )
 
         saved_report = save_weekly_report(

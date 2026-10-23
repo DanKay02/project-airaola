@@ -625,3 +625,19 @@ def test_chip_report_rejects_missing_original_squad() -> None:
             lifecycle_status="OPEN",
             chip_squad=pd.concat([_starting_xi(), _bench()], ignore_index=True),
         )
+
+
+def test_existing_squad_may_appreciate_above_initial_budget() -> None:
+    """Owned teams can legitimately appreciate above their initial value."""
+    from airaola.models.squad_rules import validate_squad
+    squad = pd.DataFrame(
+        [
+            {"id": i, "player_name": f"Player {i}",
+             "team_name": f"Club {i}", "position": pos, "price": 7.0}
+            for i, pos in enumerate(
+                ["GKP"] * 2 + ["DEF"] * 5 + ["MID"] * 5 + ["FWD"] * 3, 1
+            )
+        ]
+    )
+    assert not validate_squad(squad).is_valid
+    assert validate_squad(squad, enforce_budget=False).is_valid
