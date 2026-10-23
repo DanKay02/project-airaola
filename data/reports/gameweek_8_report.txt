@@ -5,63 +5,63 @@ Data. Decisions. Domination.
 
 DEADLINE
 Official deadline: Gameweek 8, 2026-10-23 18:30 BST
-Hours remaining: 16.06
+Hours remaining: 3.71
 Analysis window: ON TIME
 Season-clock status: STATE AHEAD
 
 FINANCE
-Squad purchase value: £98.6m
-Current market value: £99.8m
-Official selling value: £98.7m
-Money in bank: £1.4m
+Squad purchase value: £98.8m
+Current market value: £100.6m
+Official selling value: £99.3m
+Money in bank: £0.8m
 Available budget: £100.1m
 
 TRANSFER DECISION
 Decision: EXECUTE
 Recommendation strength: EXCEPTIONAL
-Gross projected gain: +46.55
-Net strategic gain: +37.80
-Hit cost: 8.00
-Reason: The 3-transfer plan adds 46.55 projected points before strategic costs and 37.80 points after them. Its complexity-adjusted execution threshold is 4.50. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+Gross projected gain: +58.83
+Net strategic gain: +53.33
+Hit cost: 4.00
+Reason: The 3-transfer plan adds 58.83 projected points before strategic costs and 53.33 points after them. Its complexity-adjusted execution threshold is 4.50. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
 
 MANUAL TRANSFER ACTIONS
-- Sell Joško Gvardiol (£5.7m) and buy Riccardo Calafiori (£6.0m).
-- Sell Antoine Semenyo (£8.3m) and buy Kiernan Dewsbury-Hall (£6.6m).
-- Sell Emersonn Correia da Silva (£5.5m) and buy João Pedro Junqueira de Jesus (£7.9m).
-- This plan includes a 8-point hit.
+- Sell Bukayo Saka (£9.6m) and buy Bryan Mbeumo (£7.9m).
+- Sell Anton Stach (£6.0m) and buy Declan Rice (£7.3m).
+- Sell Dominic Calvert-Lewin (£6.0m) and buy Charalampos Kostoulas (£5.7m).
+- This plan includes a 4-point hit.
 
 STARTING XI
-Formation: 3-4-3
-- GKP: David Raya Martín (Arsenal) | 5.13 pts
+Formation: 4-4-2
+- GKP: Konstantinos Tzolakis (Hull City) | 4.06 pts
 - DEF: Riccardo Calafiori (Arsenal) | 5.82 pts
 - DEF: Maxim De Cuyper (Brighton) | 5.80 pts
 - DEF: Gabriel dos Santos Magalhães (Arsenal) | 5.32 pts
+- DEF: Marc Guéhi (Man City) | 4.31 pts
+- MID: Bryan Mbeumo (Man Utd) [VC] | 5.70 pts
+- MID: Declan Rice (Arsenal) | 5.49 pts
 - MID: Pascal Groß (Brighton) | 5.05 pts
-- MID: Marcus Tavernier (Bournemouth) | 4.26 pts
-- MID: Mohamed Belloumi (Hull City) | 4.13 pts
-- MID: Kiernan Dewsbury-Hall (Everton) | 3.81 pts
+- MID: Bruno Borges Fernandes (Man Utd) | 4.81 pts
 - FWD: João Pedro Junqueira de Jesus (Chelsea) [C] | 7.44 pts
-- FWD: Erling Haaland (Man City) [VC] | 7.05 pts
 - FWD: Charalampos Kostoulas (Brighton) | 4.99 pts
 
 Captain: João Pedro Junqueira de Jesus (7.44 pts)
-Vice-captain: Erling Haaland (7.05 pts)
-Projected XI points before captaincy: 58.80
-Projected team total with captaincy: 66.24
+Vice-captain: Bryan Mbeumo (5.70 pts)
+Projected XI points before captaincy: 58.79
+Projected team total with captaincy: 66.23
 
 BENCH
-- 1. Jayden Bogle (Leeds, DEF) | 3.84 pts
-- 2. James Tarkowski (Everton, DEF) | 3.43 pts
-- 3. Kevin Schade (Brentford, MID) | 3.80 pts
-- 4. Konstantinos Tzolakis (Hull City, GKP) | 4.06 pts
-Projected bench points: 15.13
+- 1. Emersonn Correia da Silva (Ipswich Town, FWD) | 4.02 pts
+- 2. Kevin Schade (Brentford, MID) | 3.80 pts
+- 3. Joško Gvardiol (Man City, DEF) | 3.44 pts
+- 4. Gianluigi Donnarumma (Man City, GKP) | 3.73 pts
+Projected bench points: 14.99
 
 CHIP DECISION
 Decision: NO CHIP
 Recommendation strength: HOLD
 Projected gain: +0.00
 Adjusted gain: +0.00
-Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 33.68 adjusted points against a 18.00 threshold.
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 54.70 adjusted points against a 18.00 threshold.
 
 MANUAL CHIP ACTION
 - Do not activate a chip.
@@ -73,7 +73,7 @@ Deadline recommendation: The saved manager state is ahead of the official FPL se
 FINAL CHECKLIST
 - Complete the listed transfers in FPL.
 - Set captain to João Pedro Junqueira de Jesus.
-- Set vice-captain to Erling Haaland.
+- Set vice-captain to Bryan Mbeumo.
 - Arrange the bench in the listed order.
 - Do not activate a chip.
 - Confirm all changes before the official deadline.
