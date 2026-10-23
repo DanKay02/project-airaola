@@ -1,68 +1,68 @@
 {
   "current_gameweek": 8,
-  "free_transfers": 1,
-  "bank": 0.4,
-  "last_processed_gameweek": 8,
+  "free_transfers": 2,
+  "bank": 0.8,
+  "last_processed_gameweek": 7,
   "squad": [
     {
-      "player_id": 1,
-      "purchase_price": 6.1
-    },
-    {
       "player_id": 4,
-      "purchase_price": 8.0
+      "purchase_price": 8
     },
     {
-      "player_id": 68,
-      "purchase_price": 6.1
+      "player_id": 165,
+      "purchase_price": 7.5
     },
     {
-      "player_id": 94,
-      "purchase_price": 6.2
+      "player_id": 346,
+      "purchase_price": 6
+    },
+    {
+      "player_id": 384,
+      "purchase_price": 5.5
+    },
+    {
+      "player_id": 388,
+      "purchase_price": 6
+    },
+    {
+      "player_id": 572,
+      "purchase_price": 4.5
+    },
+    {
+      "player_id": 335,
+      "purchase_price": 6
+    },
+    {
+      "player_id": 8,
+      "purchase_price": 5.6
+    },
+    {
+      "player_id": 426,
+      "purchase_price": 12
     },
     {
       "player_id": 115,
-      "purchase_price": 5.0
+      "purchase_price": 4.8
+    },
+    {
+      "player_id": 391,
+      "purchase_price": 5.7
+    },
+    {
+      "player_id": 316,
+      "purchase_price": 5.5
     },
     {
       "player_id": 124,
       "purchase_price": 5.9
     },
     {
-      "player_id": 138,
-      "purchase_price": 5.6
-    },
-    {
-      "player_id": 229,
+      "player_id": 94,
       "purchase_price": 6.2
     },
     {
-      "player_id": 286,
-      "purchase_price": 5.1
-    },
-    {
-      "player_id": 572,
-      "purchase_price": 4.7
-    },
-    {
-      "player_id": 330,
-      "purchase_price": 4.6
-    },
-    {
-      "player_id": 411,
-      "purchase_price": 15.6
-    },
-    {
-      "player_id": 8,
-      "purchase_price": 6.0
-    },
-    {
-      "player_id": 236,
-      "purchase_price": 6.6
-    },
-    {
-      "player_id": 165,
-      "purchase_price": 7.9
+      "player_id": 12,
+      "purchase_price": 9.6
     }
   ],
   "chips": {
@@ -87,11 +87,11 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 1,
-      "hit_cost": 0.0,
+      "hit_cost": 0,
       "gross_projected_gain": 3.66,
       "net_strategic_gain": 2.91,
-      "bank_before": 0.0,
-      "bank_after": 0.0,
+      "bank_before": 0,
+      "bank_after": 0,
       "moves": [
         {
           "player_out_id": 452,
@@ -99,8 +99,8 @@
           "player_in_id": 368,
           "player_in_name": "Dominik Szoboszlai",
           "position": "MID",
-          "selling_price": 7.0,
-          "purchase_price": 7.0,
+          "selling_price": 7,
+          "purchase_price": 7,
           "projected_gain": 3.66,
           "next_gameweek_gain": 0.2
         }
@@ -112,10 +112,10 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 5,
-      "hit_cost": 16.0,
+      "hit_cost": 16,
       "gross_projected_gain": 139.02,
       "net_strategic_gain": 122.27,
-      "bank_before": 0.0,
+      "bank_before": 0,
       "bank_after": 7.5,
       "moves": [
         {
@@ -124,7 +124,7 @@
           "player_in_id": 572,
           "player_in_name": "Konstantinos Tzolakis",
           "position": "GKP",
-          "selling_price": 4.0,
+          "selling_price": 4,
           "purchase_price": 4.5,
           "projected_gain": 26.73,
           "next_gameweek_gain": 5.64
@@ -146,8 +146,8 @@
           "player_in_id": 335,
           "player_in_name": "Anton Stach",
           "position": "MID",
-          "selling_price": 8.0,
-          "purchase_price": 6.0,
+          "selling_price": 8,
+          "purchase_price": 6,
           "projected_gain": 29.29,
           "next_gameweek_gain": 6.35
         },
@@ -158,7 +158,7 @@
           "player_in_name": "Cody Gakpo",
           "position": "MID",
           "selling_price": 8.5,
-          "purchase_price": 7.0,
+          "purchase_price": 7,
           "projected_gain": 27.57,
           "next_gameweek_gain": 5.69
         },
@@ -168,7 +168,7 @@
           "player_in_id": 236,
           "player_in_name": "Kiernan Dewsbury-Hall",
           "position": "MID",
-          "selling_price": 12.0,
+          "selling_price": 12,
           "purchase_price": 6.5,
           "projected_gain": 25.19,
           "next_gameweek_gain": 4.56
@@ -181,7 +181,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 2,
-      "hit_cost": 4.0,
+      "hit_cost": 4,
       "gross_projected_gain": 31.69,
       "net_strategic_gain": 26.94,
       "bank_before": 7.5,
@@ -205,7 +205,7 @@
           "player_in_name": "Bruno Borges Fernandes",
           "position": "MID",
           "selling_price": 6.4,
-          "purchase_price": 12.0,
+          "purchase_price": 12,
           "projected_gain": 16.62,
           "next_gameweek_gain": 3.27
         }
@@ -217,7 +217,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 2,
-      "hit_cost": 4.0,
+      "hit_cost": 4,
       "gross_projected_gain": 32.76,
       "net_strategic_gain": 28.01,
       "bank_before": 0.8,
@@ -253,7 +253,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 2,
-      "hit_cost": 4.0,
+      "hit_cost": 4,
       "gross_projected_gain": 36.13,
       "net_strategic_gain": 31.38,
       "bank_before": 2.3,
@@ -267,7 +267,7 @@
           "position": "DEF",
           "selling_price": 5.5,
           "purchase_price": 5.7,
-          "projected_gain": 13.0,
+          "projected_gain": 13,
           "next_gameweek_gain": 3.41
         },
         {
@@ -289,7 +289,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 3,
-      "hit_cost": 8.0,
+      "hit_cost": 0,
       "gross_projected_gain": 39.3,
       "net_strategic_gain": 30.55,
       "bank_before": 2.1,
@@ -329,8 +329,8 @@
           "next_gameweek_gain": 1.75
         }
       ],
-      "superseded_by": "WILDCARD",
-      "applied_to_squad": false
+      "applied_to_squad": true,
+      "actual_execution": "Three listed transfers made under GW6 Wildcard; no hit charged"
     },
     {
       "gameweek": 7,
@@ -338,7 +338,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 1,
-      "hit_cost": 0.0,
+      "hit_cost": 0,
       "gross_projected_gain": 6.31,
       "net_strategic_gain": 5.56,
       "bank_before": 0.1,
@@ -355,7 +355,9 @@
           "projected_gain": 6.31,
           "next_gameweek_gain": 2.08
         }
-      ]
+      ],
+      "applied_to_squad": false,
+      "actual_execution": "Recommended, not executed in FPL"
     },
     {
       "gameweek": 8,
@@ -363,7 +365,7 @@
       "free_transfers_before": 1,
       "free_transfers_after": 1,
       "transfers_used": 3,
-      "hit_cost": 8.0,
+      "hit_cost": 8,
       "gross_projected_gain": 46.55,
       "net_strategic_gain": 37.8,
       "bank_before": 1.4,
@@ -376,7 +378,7 @@
           "player_in_name": "Riccardo Calafiori",
           "position": "DEF",
           "selling_price": 5.7,
-          "purchase_price": 6.0,
+          "purchase_price": 6,
           "projected_gain": 9.84,
           "next_gameweek_gain": 2.38
         },
@@ -402,7 +404,9 @@
           "projected_gain": 12.85,
           "next_gameweek_gain": 3.42
         }
-      ]
+      ],
+      "applied_to_squad": false,
+      "actual_execution": "Recommended, not executed in FPL"
     }
   ],
   "chip_history": [
@@ -410,8 +414,8 @@
       "gameweek": 1,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was TRIPLE CAPTAIN at 4.48 adjusted points against a 8.00 threshold."
     },
@@ -419,8 +423,8 @@
       "gameweek": 2,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 200.90 adjusted points against a 18.00 threshold."
     },
@@ -428,8 +432,8 @@
       "gameweek": 3,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 46.89 adjusted points against a 18.00 threshold."
     },
@@ -440,7 +444,7 @@
       "chip_key": "bench_boost",
       "projected_gain": 15.75,
       "adjusted_gain": 15.75,
-      "execution_threshold": 14.0,
+      "execution_threshold": 14,
       "recommendation_strength": "MODERATE",
       "captain_name": "João Pedro Junqueira de Jesus",
       "captain_projected_points": 6.47,
@@ -453,8 +457,8 @@
       "gameweek": 5,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 49.34 adjusted points against a 18.00 threshold."
     },
@@ -465,7 +469,7 @@
       "chip_key": "wildcard",
       "projected_gain": 56.59,
       "adjusted_gain": 56.59,
-      "execution_threshold": 18.0,
+      "execution_threshold": 18,
       "recommendation_strength": "EXCEPTIONAL",
       "captain_name": "Pascal Groß",
       "captain_projected_points": 6.51,
@@ -487,7 +491,7 @@
             "player_name": "Gabriel dos Santos Magalhães",
             "team_name": "Arsenal",
             "position": "DEF",
-            "price": 8.0
+            "price": 8
           },
           {
             "player_id": 12,
@@ -515,7 +519,7 @@
             "player_name": "Maxim De Cuyper",
             "team_name": "Brighton",
             "position": "DEF",
-            "price": 5.0
+            "price": 5
           },
           {
             "player_id": 124,
@@ -589,7 +593,7 @@
           "current_next_gameweek_points": 309.72,
           "optimised_next_gameweek_points": 366.31,
           "next_gameweek_gain": 56.59,
-          "available_budget": 100.0,
+          "available_budget": 100,
           "optimised_squad_cost": 99.9,
           "bank_remaining": 0.1,
           "secure_player_count": 15,
@@ -625,8 +629,8 @@
       "gameweek": 7,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 35.85 adjusted points against a 18.00 threshold."
     },
@@ -634,8 +638,8 @@
       "gameweek": 8,
       "period": "first_half",
       "decision": "NO CHIP",
-      "projected_gain": 0.0,
-      "adjusted_gain": 0.0,
+      "projected_gain": 0,
+      "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 33.68 adjusted points against a 18.00 threshold."
     }
@@ -645,7 +649,7 @@
       "event": "GAMEWEEK_PROCESSED",
       "gameweek": 1,
       "free_transfers_ready": 1,
-      "bank": 0.0,
+      "bank": 0,
       "active_chip_period": "first_half"
     },
     {
@@ -653,7 +657,7 @@
       "from_gameweek": 1,
       "to_gameweek": 2,
       "free_transfers_available": 1,
-      "bank": 0.0,
+      "bank": 0,
       "expired_first_half_chips": [],
       "active_chip_period": "first_half"
     },
@@ -754,11 +758,12 @@
       "active_chip_period": "first_half"
     },
     {
-      "event": "GAMEWEEK_PROCESSED",
+      "event": "MANUAL_FPL_RECONCILIATION",
       "gameweek": 8,
-      "free_transfers_ready": 1,
-      "bank": 0.4,
-      "active_chip_period": "first_half"
+      "bank": 0.8,
+      "free_transfers": 2,
+      "source": "FPL screenshots 2026-10-23 and pre-Wildcard GW6 state; GW6 listed transfers executed; GW7/GW8 suggested transfers not executed",
+      "note": "GW8 not processed. Confirm FPL transfer screen and purchase-price history before autonomous execution."
     }
   ]
 }
