@@ -358,55 +358,6 @@
       ],
       "applied_to_squad": false,
       "actual_execution": "Recommended, not executed in FPL"
-    },
-    {
-      "gameweek": 8,
-      "decision": "EXECUTE",
-      "free_transfers_before": 1,
-      "free_transfers_after": 1,
-      "transfers_used": 3,
-      "hit_cost": 8,
-      "gross_projected_gain": 46.55,
-      "net_strategic_gain": 37.8,
-      "bank_before": 1.4,
-      "bank_after": 0.4,
-      "moves": [
-        {
-          "player_out_id": 391,
-          "player_out_name": "Joško Gvardiol",
-          "player_in_id": 8,
-          "player_in_name": "Riccardo Calafiori",
-          "position": "DEF",
-          "selling_price": 5.7,
-          "purchase_price": 6,
-          "projected_gain": 9.84,
-          "next_gameweek_gain": 2.38
-        },
-        {
-          "player_out_id": 397,
-          "player_out_name": "Antoine Semenyo",
-          "player_in_id": 236,
-          "player_in_name": "Kiernan Dewsbury-Hall",
-          "position": "MID",
-          "selling_price": 8.3,
-          "purchase_price": 6.6,
-          "projected_gain": 23.86,
-          "next_gameweek_gain": 3.81
-        },
-        {
-          "player_out_id": 316,
-          "player_out_name": "Emersonn Correia da Silva",
-          "player_in_id": 165,
-          "player_in_name": "João Pedro Junqueira de Jesus",
-          "position": "FWD",
-          "selling_price": 5.5,
-          "purchase_price": 7.9,
-          "projected_gain": 12.85,
-          "next_gameweek_gain": 3.42
-        }
-      ],
-      "applied_to_squad": false,
-      "actual_execution": "Recommended, not executed in FPL"
     }
   ],
   "chip_history": [
@@ -633,15 +584,6 @@
       "adjusted_gain": 0,
       "recommendation_strength": "HOLD",
       "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 35.85 adjusted points against a 18.00 threshold."
-    },
-    {
-      "gameweek": 8,
-      "period": "first_half",
-      "decision": "NO CHIP",
-      "projected_gain": 0,
-      "adjusted_gain": 0,
-      "recommendation_strength": "HOLD",
-      "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 33.68 adjusted points against a 18.00 threshold."
     }
   ],
   "lifecycle_history": [
@@ -764,6 +706,73 @@
       "free_transfers": 2,
       "source": "FPL screenshots 2026-10-23 and pre-Wildcard GW6 state; GW6 listed transfers executed; GW7/GW8 suggested transfers not executed",
       "note": "GW8 not processed. Confirm FPL transfer screen and purchase-price history before autonomous execution."
+    },
+    {
+      "event": "ARCHIVED_UNEXECUTED_GW8_RECOMMENDATIONS",
+      "gameweek": 8,
+      "reason": "Previously auto-generated from incorrect squad; retain for audit, free active decision slot for recomputation",
+      "transfer_recommendations": [
+        {
+          "gameweek": 8,
+          "decision": "EXECUTE",
+          "free_transfers_before": 1,
+          "free_transfers_after": 1,
+          "transfers_used": 3,
+          "hit_cost": 8,
+          "gross_projected_gain": 46.55,
+          "net_strategic_gain": 37.8,
+          "bank_before": 1.4,
+          "bank_after": 0.4,
+          "moves": [
+            {
+              "player_out_id": 391,
+              "player_out_name": "Joško Gvardiol",
+              "player_in_id": 8,
+              "player_in_name": "Riccardo Calafiori",
+              "position": "DEF",
+              "selling_price": 5.7,
+              "purchase_price": 6,
+              "projected_gain": 9.84,
+              "next_gameweek_gain": 2.38
+            },
+            {
+              "player_out_id": 397,
+              "player_out_name": "Antoine Semenyo",
+              "player_in_id": 236,
+              "player_in_name": "Kiernan Dewsbury-Hall",
+              "position": "MID",
+              "selling_price": 8.3,
+              "purchase_price": 6.6,
+              "projected_gain": 23.86,
+              "next_gameweek_gain": 3.81
+            },
+            {
+              "player_out_id": 316,
+              "player_out_name": "Emersonn Correia da Silva",
+              "player_in_id": 165,
+              "player_in_name": "João Pedro Junqueira de Jesus",
+              "position": "FWD",
+              "selling_price": 5.5,
+              "purchase_price": 7.9,
+              "projected_gain": 12.85,
+              "next_gameweek_gain": 3.42
+            }
+          ],
+          "applied_to_squad": false,
+          "actual_execution": "Recommended, not executed in FPL"
+        }
+      ],
+      "chip_recommendations": [
+        {
+          "gameweek": 8,
+          "period": "first_half",
+          "decision": "NO CHIP",
+          "projected_gain": 0,
+          "adjusted_gain": 0,
+          "recommendation_strength": "HOLD",
+          "reason": "No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 33.68 adjusted points against a 18.00 threshold."
+        }
+      ]
     }
   ]
 }
