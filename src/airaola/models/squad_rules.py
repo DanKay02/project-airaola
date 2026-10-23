@@ -154,6 +154,7 @@ def validate_club_limit(squad: pd.DataFrame) -> list[str]:
 
 def validate_squad(
     squad: pd.DataFrame,
+    enforce_budget: bool = True,
 ) -> SquadValidationResult:
     """Validate a complete FPL squad against registration rules."""
 
@@ -176,7 +177,8 @@ def validate_squad(
     errors.extend(validate_squad_size(squad))
     errors.extend(validate_unique_players(squad))
     errors.extend(validate_positions(squad))
-    errors.extend(validate_budget(squad))
+    if enforce_budget:
+        errors.extend(validate_budget(squad))
     errors.extend(validate_club_limit(squad))
 
     total_cost = float(squad["price"].sum())

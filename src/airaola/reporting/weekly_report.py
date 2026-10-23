@@ -522,6 +522,8 @@ def build_weekly_report(
     bench: pd.DataFrame,
     chip_recommendation: ChipRecommendation,
     lifecycle_status: str,
+    chip_squad: pd.DataFrame | None = None,
+    original_squad: pd.DataFrame | None = None,
 ) -> WeeklyReport:
     """Build plain-text and HTML weekly decision reports."""
 
@@ -575,6 +577,52 @@ def build_weekly_report(
     transfer_actions = _transfer_actions(
         transfer_plan
     )
+    if chip_squad is not None:
+        if original_squad is None:
+            raise ValueError("A chip squad requires the original squad.")
+        if len(chip_squad) != 15 or len(original_squad) != 15:
+            raise ValueError("Chip squad comparison requires 15 players each.")
+        before = set(original_squad["id"].astype(int))
+        after = set(chip_squad["id"].astype(int))
+        incoming = chip_squad[chip_squad["id"].astype(int).isin(after - before)]
+        outgoing = original_squad[original_squad["id"].astype(int).isin(before - after)]
+        if len(incoming) != len(outgoing):
+            raise ValueError("Chip squad has inconsistent incoming/outgoing counts.")
+        transfer_actions = [
+            "Ordinary transfer plan superseded by the selected chip.",
+            "Remove: " + (", ".join(outgoing["player_name"].astype(str)) or "none") + ".",
+            "Add: " + (", ".join(incoming["player_name"].astype(str)) or "none") + ".",
+            "Do not apply the ordinary transfer hit.",
+        ]
+
+    effective_transfer_decision = (
+        f"SUPERSEDED BY {chip_recommendation.decision}"
+        if chip_squad is not None
+        else str(transfer_plan.decision)
+    )
+    effective_transfer_strength = (
+        "CHIP OVERRIDE"
+        if chip_squad is not None
+        else str(transfer_plan.recommendation_strength)
+    )
+    effective_gross_gain = (
+        0.0 if chip_squad is not None
+        else transfer_plan.gross_projected_gain
+    )
+    effective_net_gain = (
+        0.0 if chip_squad is not None
+        else transfer_plan.net_strategic_gain
+    )
+    effective_hit_cost = (
+        0.0 if chip_squad is not None
+        else transfer_plan.hit_cost
+    )
+    effective_reason = (
+        "Ordinary transfer proposal was not executed. "
+        "The selected chip squad replaces it."
+        if chip_squad is not None
+        else str(transfer_plan.reason)
+    )
 
     text_lines = [
         "=" * 68,
@@ -625,24 +673,24 @@ def build_weekly_report(
         ),
         "",
         "TRANSFER DECISION",
-        f"Decision: {transfer_plan.decision}",
+        f"Decision: {effective_transfer_decision}",
         (
             "Recommendation strength: "
-            f"{transfer_plan.recommendation_strength}"
+            f"{effective_transfer_strength}"
         ),
         (
             "Gross projected gain: "
-            f"{_format_points(transfer_plan.gross_projected_gain, True)}"
+            f"{_format_points(effective_gross_gain, True)}"
         ),
         (
             "Net strategic gain: "
-            f"{_format_points(transfer_plan.net_strategic_gain, True)}"
+            f"{_format_points(effective_net_gain, True)}"
         ),
         (
             "Hit cost: "
-            f"{_format_points(transfer_plan.hit_cost)}"
+            f"{_format_points(effective_hit_cost)}"
         ),
-        f"Reason: {transfer_plan.reason}",
+        f"Reason: {effective_reason}",
         "",
         "MANUAL TRANSFER ACTIONS",
         *[
@@ -782,20 +830,20 @@ def build_weekly_report(
         </ul>
 
         <h3>Transfer Decision</h3>
-        <p><strong>Decision:</strong> {escape(str(transfer_plan.decision))}</p>
+        <p><strong>Decision:</strong> {escape(str(effective_transfer_decision))}</p>
         <p>
             <strong>Recommendation strength:</strong>
-            {escape(str(transfer_plan.recommendation_strength))}
+            {escape(str(effective_transfer_strength))}
         </p>
         <p>
             <strong>Net strategic gain:</strong>
-            {escape(_format_points(transfer_plan.net_strategic_gain, True))}
+            {escape(_format_points(effective_net_gain, True))}
         </p>
-        <p>{escape(str(transfer_plan.reason))}</p>
+        <p>{escape(str(effective_reason))}</p>
 
         <h4>Manual Transfer Actions</h4>
         <ul>
-            {_transfer_actions_html(transfer_plan)}
+            {"".join(f"<li>{escape(action)}</li>" for action in transfer_actions)}
         </ul>
 
         <h3>Starting XI</h3>

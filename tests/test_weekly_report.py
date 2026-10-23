@@ -588,3 +588,78 @@ def test_invalid_bench_order_is_rejected() -> None:
             ),
             lifecycle_status="OPEN",
         )
+
+def test_chip_report_supersedes_ordinary_transfers() -> None:
+    """A Wildcard report must not instruct the ordinary transfer plan."""
+    original = pd.concat([_starting_xi(), _bench()], ignore_index=True)
+    chip = original.copy()
+    chip.loc[chip["id"] == 6, "id"] = 22
+    chip.loc[chip["id"] == 22, "player_name"] = "Wildcard Midfielder"
+    report = build_weekly_report(
+        deadline_intelligence=_deadline_intelligence(),
+        squad_value=_squad_value(),
+        transfer_plan=_execute_transfer_plan(),
+        starting_xi=_starting_xi(),
+        bench=_bench(),
+        chip_recommendation=_chip_recommendation("WILDCARD"),
+        lifecycle_status="OPEN",
+        chip_squad=chip,
+        original_squad=original,
+    )
+    assert "Ordinary transfer plan superseded" in report.text_content
+    assert "Remove: Midfielder Two." in report.text_content
+    assert "Add: Wildcard Midfielder." in report.text_content
+    assert "Sell Outgoing Player" not in report.text_content
+    assert "Wildcard Midfielder" in report.html_content
+
+
+def test_chip_report_rejects_missing_original_squad() -> None:
+    with pytest.raises(ValueError, match="original squad"):
+        build_weekly_report(
+            deadline_intelligence=_deadline_intelligence(),
+            squad_value=_squad_value(),
+            transfer_plan=_execute_transfer_plan(),
+            starting_xi=_starting_xi(),
+            bench=_bench(),
+            chip_recommendation=_chip_recommendation("WILDCARD"),
+            lifecycle_status="OPEN",
+            chip_squad=pd.concat([_starting_xi(), _bench()], ignore_index=True),
+        )
+
+
+def test_existing_squad_may_appreciate_above_initial_budget() -> None:
+    """Owned teams can legitimately appreciate above their initial value."""
+    from airaola.models.squad_rules import validate_squad
+    squad = pd.DataFrame(
+        [
+            {"id": i, "player_name": f"Player {i}",
+             "team_name": f"Club {i}", "position": pos, "price": 7.0}
+            for i, pos in enumerate(
+                ["GKP"] * 2 + ["DEF"] * 5 + ["MID"] * 5 + ["FWD"] * 3, 1
+            )
+        ]
+    )
+    assert not validate_squad(squad).is_valid
+    assert validate_squad(squad, enforce_budget=False).is_valid
+
+
+def test_wildcard_report_does_not_claim_ordinary_transfer_gain_or_hit() -> None:
+    original = pd.concat([_starting_xi(), _bench()], ignore_index=True)
+    chip = original.copy()
+    chip.loc[chip["id"] == 6, "id"] = 22
+    chip.loc[chip["id"] == 22, "player_name"] = "Wildcard Midfielder"
+    report = build_weekly_report(
+        deadline_intelligence=_deadline_intelligence(),
+        squad_value=_squad_value(),
+        transfer_plan=_execute_transfer_plan(),
+        starting_xi=_starting_xi(),
+        bench=_bench(),
+        chip_recommendation=_chip_recommendation("WILDCARD"),
+        lifecycle_status="PROCESSED",
+        chip_squad=chip,
+        original_squad=original,
+    )
+    assert "Decision: SUPERSEDED BY WILDCARD" in report.text_content
+    assert "Hit cost: 0.00" in report.text_content
+    assert "Net strategic gain: +0.00" in report.text_content
+    assert "Decision:</strong> SUPERSEDED BY WILDCARD" in report.html_content
