@@ -2189,6 +2189,13 @@ def main() -> None:
                 "Chip decision not applied."
             )
 
+        if transfer_overridden and selected_chip_squad is not None:
+            # Report the team that the winning chip actually selects,
+            # not the ordinary transfers that it superseded.
+            starting_xi, bench, _, _ = select_gameweek_team(
+                selected_chip_squad
+            )
+
         decisions_recorded = (
             should_apply
             and should_apply_chip
@@ -2233,6 +2240,12 @@ def main() -> None:
             ),
             lifecycle_status=(
                 lifecycle_status
+            ),
+            chip_squad=(
+                selected_chip_squad if transfer_overridden else None
+            ),
+            original_squad=(
+                squad if transfer_overridden else None
             ),
         )
 
