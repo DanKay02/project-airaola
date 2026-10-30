@@ -1,0 +1,79 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 9 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 9, 2026-10-31 11:00 GMT
+Hours remaining: 22.27
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £98.1m
+Current market value: £99.5m
+Official selling value: £98.3m
+Money in bank: £1.5m
+Available budget: £99.8m
+
+TRANSFER DECISION
+Decision: SUPERSEDED BY FREE HIT
+Recommendation strength: CHIP OVERRIDE
+Gross projected gain: +0.00
+Net strategic gain: +0.00
+Hit cost: 0.00
+Reason: Ordinary transfer proposal was not executed. The selected chip squad replaces it.
+
+MANUAL TRANSFER ACTIONS
+- Ordinary transfer plan superseded by the selected chip.
+- Remove: Riccardo Calafiori, Declan Rice, Kevin Schade, Pascal Groß, Charalampos Kostoulas, João Pedro Junqueira de Jesus, Emersonn Correia da Silva, Gianluigi Donnarumma, Marc Guéhi, Joško Gvardiol, Bruno Borges Fernandes, Bryan Mbeumo.
+- Add: Nicolas Jackson, Marcus Tavernier, Keane Lewis-Potter, Mohamed Belloumi, Jayden Bogle, James Justin, Alexander Isak, Rayan Cherki, Erling Haaland, Harvey Barnes, Jan Paul van Hecke, Antonín Kinský.
+- Do not apply the ordinary transfer hit.
+
+STARTING XI
+Formation: 3-4-3
+- GKP: Konstantinos Tzolakis (Hull City) | 4.37 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) | 5.35 pts
+- DEF: Jan Paul van Hecke (Spurs) | 4.74 pts
+- DEF: Maxim De Cuyper (Brighton) | 4.61 pts
+- MID: Marcus Tavernier (Bournemouth) [VC] | 5.73 pts
+- MID: Rayan Cherki (Man City) | 5.21 pts
+- MID: Keane Lewis-Potter (Brentford) | 4.65 pts
+- MID: Harvey Barnes (Newcastle) | 4.61 pts
+- FWD: Erling Haaland (Man City) [C] | 7.74 pts
+- FWD: Nicolas Jackson (Aston Villa) | 5.48 pts
+- FWD: Alexander Isak (Liverpool) | 5.44 pts
+
+Captain: Erling Haaland (7.74 pts)
+Vice-captain: Marcus Tavernier (5.73 pts)
+Projected XI points before captaincy: 57.93
+Projected team total with captaincy: 65.67
+
+BENCH
+- 1. James Justin (Leeds, DEF) | 4.02 pts
+- 2. Mohamed Belloumi (Hull City, MID) | 4.50 pts
+- 3. Jayden Bogle (Leeds, DEF) | 3.99 pts
+- 4. Antonín Kinský (Spurs, GKP) | 4.05 pts
+Projected bench points: 16.56
+
+CHIP DECISION
+Decision: FREE HIT
+Recommendation strength: STRONG
+Projected gain: +15.66
+Adjusted gain: +15.66
+Reason: Free Hit would improve the selected one-Gameweek team by 15.66 projected points using a temporary legal squad with 12 changes. The optimiser compared both squads using the same legal formations, captaincy scoring and bench-cover weighting.
+
+MANUAL CHIP ACTION
+- Activate Free Hit.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Erling Haaland.
+- Set vice-captain to Marcus Tavernier.
+- Arrange the bench in the listed order.
+- Activate Free Hit.
+- Confirm all changes before the official deadline.
