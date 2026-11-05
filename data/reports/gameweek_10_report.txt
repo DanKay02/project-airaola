@@ -1,0 +1,78 @@
+====================================================================
+PROJECT AIRAOLA | GAMEWEEK 10 DECISION REPORT
+Data. Decisions. Domination.
+====================================================================
+
+DEADLINE
+Official deadline: Gameweek 10, 2026-11-06 18:30 GMT
+Hours remaining: 22.61
+Analysis window: ON TIME
+Season-clock status: STATE AHEAD
+
+FINANCE
+Squad purchase value: £98.1m
+Current market value: £99.6m
+Official selling value: £98.5m
+Money in bank: £1.5m
+Available budget: £100.0m
+
+TRANSFER DECISION
+Decision: EXECUTE
+Recommendation strength: EXCEPTIONAL
+Gross projected gain: +36.44
+Net strategic gain: +31.69
+Hit cost: 4.00
+Reason: The 2-transfer plan adds 36.44 projected points before strategic costs and 31.69 points after them. Its complexity-adjusted execution threshold is 3.00. Hit transfers must also clear Airaola's marginal-gain safeguards. Official selling prices were used for every outgoing player.
+
+MANUAL TRANSFER ACTIONS
+- Sell Joško Gvardiol (£5.7m) and buy Jan Paul van Hecke (£5.0m).
+- Sell João Pedro Junqueira de Jesus (£7.6m) and buy Alexander Isak (£9.2m).
+- This plan includes a 4-point hit.
+
+STARTING XI
+Formation: 4-4-2
+- GKP: Gianluigi Donnarumma (Man City) | 3.55 pts
+- DEF: Gabriel dos Santos Magalhães (Arsenal) [C] | 7.07 pts
+- DEF: Maxim De Cuyper (Brighton) | 6.61 pts
+- DEF: Riccardo Calafiori (Arsenal) | 5.38 pts
+- DEF: Jan Paul van Hecke (Spurs) | 4.79 pts
+- MID: Declan Rice (Arsenal) [VC] | 5.93 pts
+- MID: Pascal Groß (Brighton) | 5.26 pts
+- MID: Bryan Mbeumo (Man Utd) | 4.78 pts
+- MID: Bruno Borges Fernandes (Man Utd) | 4.05 pts
+- FWD: Alexander Isak (Liverpool) | 5.60 pts
+- FWD: Charalampos Kostoulas (Brighton) | 5.32 pts
+
+Captain: Gabriel dos Santos Magalhães (7.07 pts)
+Vice-captain: Declan Rice (5.93 pts)
+Projected XI points before captaincy: 58.34
+Projected team total with captaincy: 65.41
+
+BENCH
+- 1. Emersonn Correia da Silva (Ipswich Town, FWD) | 3.67 pts
+- 2. Marc Guéhi (Man City, DEF) | 3.72 pts
+- 3. Kevin Schade (Brentford, MID) | 3.16 pts
+- 4. Konstantinos Tzolakis (Hull City, GKP) | 2.69 pts
+Projected bench points: 13.24
+
+CHIP DECISION
+Decision: NO CHIP
+Recommendation strength: HOLD
+Projected gain: +0.00
+Adjusted gain: +0.00
+Reason: No available chip clears Airaola's execution threshold. The strongest rejected option was WILDCARD at 53.28 adjusted points against a 18.00 threshold.
+
+MANUAL CHIP ACTION
+- Do not activate a chip.
+
+LIFECYCLE
+Lifecycle status: PROCESSED
+Deadline recommendation: The saved manager state is ahead of the official FPL season clock. Do not advance or process another Gameweek until official data catches up.
+
+FINAL CHECKLIST
+- Complete the listed transfers in FPL.
+- Set captain to Gabriel dos Santos Magalhães.
+- Set vice-captain to Declan Rice.
+- Arrange the bench in the listed order.
+- Do not activate a chip.
+- Confirm all changes before the official deadline.
